@@ -231,6 +231,7 @@
     <Compile Include="DecisionEngine\IRejectWithReason.cs" />
     <Compile Include="DecisionEngine\Rejection.cs" />
     <Compile Include="DecisionEngine\RejectionType.cs" />
+    <Compile Include="DecisionEngine\Specifications\RepackSpecification.cs" />
     <Compile Include="DecisionEngine\Specifications\SameTracksSpecification.cs" />
     <Compile Include="DecisionEngine\SpecificationPriority.cs" />
     <Compile Include="DecisionEngine\Specifications\AcceptableSizeSpecification.cs" />
