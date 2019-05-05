@@ -291,6 +291,7 @@ namespace NzbDrone.Core.Test.ParserTests
         }
 
         [TestCase("Artist Title - Album Title 2017 REPACK FLAC aAF", true)]
+        [TestCase("Artist Title - Album Title 2017 RERIP FLAC aAF", true)]
         [TestCase("Artist Title - Album Title 2017 PROPER FLAC aAF", false)]
         public void should_be_able_to_parse_repack(string title, bool isRepack)
         {

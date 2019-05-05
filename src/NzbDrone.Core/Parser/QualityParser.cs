@@ -13,10 +13,10 @@ namespace NzbDrone.Core.Parser
     {
         private static readonly Logger Logger = NzbDroneLogger.GetLogger(typeof(QualityParser));
 
-        private static readonly Regex ProperRegex = new Regex(@"\b(?<proper>proper|rerip)\b",
+        private static readonly Regex ProperRegex = new Regex(@"\b(?<proper>proper)\b",
                                                                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static readonly Regex RepackRegex = new Regex(@"\b(?<repack>repack)\b",
+        private static readonly Regex RepackRegex = new Regex(@"\b(?<repack>repack|rerip)\b",
                                                                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static readonly Regex VersionRegex = new Regex(@"\dv(?<version>\d)\b|\[v(?<version>\d)\]",
