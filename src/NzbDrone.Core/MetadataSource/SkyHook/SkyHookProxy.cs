@@ -301,6 +301,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         {
             Album album = new Album();
             album.ForeignAlbumId = resource.Id;
+            album.OldForeignAlbumIds = resource.OldIds;
             album.Title = resource.Title;
             album.Overview = resource.Overview;
             album.Disambiguation = resource.Disambiguation;
@@ -331,6 +332,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         {
             AlbumRelease release = new AlbumRelease();
             release.ForeignReleaseId = resource.Id;
+            release.OldForeignReleaseIds = resource.OldIds;
             release.Title = resource.Title;
             release.Status = resource.Status;
             release.Label = resource.Label;
@@ -384,7 +386,9 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                 ArtistMetadata = artistDict[resource.ArtistId],
                 Title = resource.TrackName,
                 ForeignTrackId = resource.Id,
+                OldForeignTrackIds = resource.OldIds,
                 ForeignRecordingId = resource.RecordingId,
+                OldForeignRecordingIds = resource.OldRecordingIds,
                 TrackNumber = resource.TrackNumber,
                 AbsoluteTrackNumber = resource.TrackPosition,
                 Duration = resource.DurationMs,
@@ -400,7 +404,9 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             ArtistMetadata artist = new ArtistMetadata();
 
             artist.Name = resource.ArtistName;
+            artist.Aliases = resource.ArtistAliases;
             artist.ForeignArtistId = resource.Id;
+            artist.OldForeignArtistIds = resource.OldIds;
             artist.Genres = resource.Genres;
             artist.Overview = resource.Overview;
             artist.Disambiguation = resource.Disambiguation;
