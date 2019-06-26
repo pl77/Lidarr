@@ -11,6 +11,7 @@ using NzbDrone.Core.Test.Framework;
 using NzbDrone.Core.Music;
 using NzbDrone.Core.Music.Commands;
 using NzbDrone.Test.Common;
+using NzbDrone.Core.MediaFiles;
 
 namespace NzbDrone.Core.Test.MusicTests
 {
@@ -52,6 +53,10 @@ namespace NzbDrone.Core.Test.MusicTests
             Mocker.GetMock<IProvideArtistInfo>()
                   .Setup(s => s.GetArtistInfo(It.IsAny<string>(), It.IsAny<int>()))
                   .Callback(() => { throw new ArtistNotFoundException(_artist.ForeignArtistId); });
+
+            Mocker.GetMock<IMediaFileService>()
+                .Setup(x => x.GetFilesByArtist(It.IsAny<int>()))
+                .Returns(new List<TrackFile>());
         }
 
         private void GivenNewArtistInfo(Artist artist)
@@ -60,81 +65,60 @@ namespace NzbDrone.Core.Test.MusicTests
                   .Setup(s => s.GetArtistInfo(_artist.ForeignArtistId, _artist.MetadataProfileId))
                   .Returns(artist);
         }
+        
+        private void GivenArtistFiles()
+        {
+            Mocker.GetMock<IMediaFileService>()
+                  .Setup(x => x.GetFilesByArtist(It.IsAny<int>()))
+                  .Returns(Builder<TrackFile>.CreateListOfSize(1).BuildList());
+        }
 
         [Test]
-        public void should_log_error_if_musicbrainz_id_not_found()
+        public void should_log_error_and_delete_if_musicbrainz_id_not_found_and_artist_has_no_files()
         {
             Subject.Execute(new RefreshArtistCommand(_artist.Id));
 
             Mocker.GetMock<IArtistService>()
                 .Verify(v => v.UpdateArtist(It.IsAny<Artist>()), Times.Never());
+            
+            Mocker.GetMock<IArtistService>()
+                .Verify(v => v.DeleteArtist(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Once());
 
             ExceptionVerification.ExpectedErrors(1);
+            ExceptionVerification.ExpectedWarns(1);
+        }
+        
+        [Test]
+        public void should_log_error_but_not_delete_if_musicbrainz_id_not_found_and_artist_has_files()
+        {
+            GivenArtistFiles();
+            
+            Subject.Execute(new RefreshArtistCommand(_artist.Id));
+
+            Mocker.GetMock<IArtistService>()
+                .Verify(v => v.UpdateArtist(It.IsAny<Artist>()), Times.Never());
+            
+            Mocker.GetMock<IArtistService>()
+                .Verify(v => v.DeleteArtist(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never());
+
+            ExceptionVerification.ExpectedErrors(2);
         }
 
         [Test]
-        public void should_update_if_musicbrainz_id_changed()
+        public void should_update_if_musicbrainz_id_changed_and_no_clash()
         {
             var newArtistInfo = _artist.JsonClone();
             newArtistInfo.Metadata = _artist.Metadata.Value.JsonClone();
             newArtistInfo.Albums = _albums;
             newArtistInfo.ForeignArtistId = _artist.ForeignArtistId + 1;
+            newArtistInfo.Metadata.Value.Id = 100;
 
             GivenNewArtistInfo(newArtistInfo);
 
             Subject.Execute(new RefreshArtistCommand(_artist.Id));
 
             Mocker.GetMock<IArtistService>()
-                .Verify(v => v.UpdateArtist(It.Is<Artist>(s => s.ForeignArtistId == newArtistInfo.ForeignArtistId)));
-
-            ExceptionVerification.ExpectedWarns(1);
-        }
-
-        [Test]
-        [Ignore("This test needs to be re-written as we no longer store albums in artist table or object")]
-        public void should_not_throw_if_duplicate_album_is_in_existing_info()
-        {
-            var newArtistInfo = _artist.JsonClone();
-            newArtistInfo.Albums.Value.Add(Builder<Album>.CreateNew()
-                                                  .With(s => s.ForeignAlbumId = "2")
-                                                  .Build());
-
-            _artist.Albums.Value.Add(Builder<Album>.CreateNew()
-                                            .With(s => s.ForeignAlbumId = "2")
-                                            .Build());
-
-            _artist.Albums.Value.Add(Builder<Album>.CreateNew()
-                                            .With(s => s.ForeignAlbumId = "2")
-                                            .Build());
-
-            GivenNewArtistInfo(newArtistInfo);
-
-            Subject.Execute(new RefreshArtistCommand(_artist.Id));
-
-            Mocker.GetMock<IArtistService>()
-                  .Verify(v => v.UpdateArtist(It.Is<Artist>(s => s.Albums.Value.Count == 2)));
-        }
-
-        [Test]
-        [Ignore("This test needs to be re-written as we no longer store albums in artist table or object")]
-        public void should_filter_duplicate_albums()
-        {
-            var newArtistInfo = _artist.JsonClone();
-            newArtistInfo.Albums.Value.Add(Builder<Album>.CreateNew()
-                                                  .With(s => s.ForeignAlbumId = "2")
-                                                  .Build());
-
-            newArtistInfo.Albums.Value.Add(Builder<Album>.CreateNew()
-                                                  .With(s => s.ForeignAlbumId = "2")
-                                                  .Build());
-
-            GivenNewArtistInfo(newArtistInfo);
-
-            Subject.Execute(new RefreshArtistCommand(_artist.Id));
-
-            Mocker.GetMock<IArtistService>()
-                  .Verify(v => v.UpdateArtist(It.Is<Artist>(s => s.Albums.Value.Count == 2)));
-
+                .Verify(v => v.UpdateArtist(It.Is<Artist>(s => s.ArtistMetadataId == 100)));
         }
     }
 }

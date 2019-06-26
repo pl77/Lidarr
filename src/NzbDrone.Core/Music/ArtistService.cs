@@ -34,7 +34,6 @@ namespace NzbDrone.Core.Music
     public class ArtistService : IArtistService
     {
         private readonly IArtistRepository _artistRepository;
-        private readonly IArtistMetadataRepository _artistMetadataRepository;
         private readonly IEventAggregator _eventAggregator;
         private readonly ITrackService _trackService;
         private readonly IImportListExclusionService _importListExclusionService;
@@ -43,7 +42,6 @@ namespace NzbDrone.Core.Music
         private readonly ICached<List<Artist>> _cache;
 
         public ArtistService(IArtistRepository artistRepository,
-                             IArtistMetadataRepository artistMetadataRepository,
                              IEventAggregator eventAggregator,
                              ITrackService trackService,
                              IImportListExclusionService importListExclusionService,
@@ -52,7 +50,6 @@ namespace NzbDrone.Core.Music
                              Logger logger)
         {
             _artistRepository = artistRepository;
-            _artistMetadataRepository = artistMetadataRepository;
             _eventAggregator = eventAggregator;
             _trackService = trackService;
             _importListExclusionService = importListExclusionService;
@@ -64,7 +61,6 @@ namespace NzbDrone.Core.Music
         public Artist AddArtist(Artist newArtist)
         {
             _cache.Clear();
-            _artistMetadataRepository.Upsert(newArtist);
             _artistRepository.Insert(newArtist);
             _eventAggregator.PublishEvent(new ArtistAddedEvent(GetArtist(newArtist.Id)));
 
@@ -74,8 +70,9 @@ namespace NzbDrone.Core.Music
         public List<Artist> AddArtists(List<Artist> newArtists)
         {
             _cache.Clear();
-            _artistMetadataRepository.UpsertMany(newArtists);
+            _logger.Debug("metadata id service {0}", string.Join(", ", newArtists.Select(x => x.ArtistMetadataId)));
             _artistRepository.InsertMany(newArtists);
+            _logger.Debug("metadata id service 2 {0}", string.Join(", ", newArtists.Select(x => x.ArtistMetadataId)));
             _eventAggregator.PublishEvent(new ArtistsImportedEvent(newArtists.Select(s => s.Id).ToList()));
 
             return newArtists;
@@ -211,9 +208,8 @@ namespace NzbDrone.Core.Music
         public Artist UpdateArtist(Artist artist)
         {
             _cache.Clear();
-            var storedArtist = GetArtist(artist.Id); // Is it Id or iTunesId?
-            var updatedArtist = _artistMetadataRepository.Update(artist);
-            updatedArtist = _artistRepository.Update(updatedArtist);
+            var storedArtist = GetArtist(artist.Id);
+            var updatedArtist = _artistRepository.Update(artist);
             _eventAggregator.PublishEvent(new ArtistEditedEvent(updatedArtist, storedArtist));
 
             return updatedArtist;
@@ -242,7 +238,6 @@ namespace NzbDrone.Core.Music
                 }
             }
 
-            _artistMetadataRepository.UpdateMany(artist);
             _artistRepository.UpdateMany(artist);
             _logger.Debug("{0} artists updated", artist.Count);
 
