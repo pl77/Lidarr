@@ -89,6 +89,11 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
 
         public IEnumerable<AlbumResource> FilterAlbums(IEnumerable<AlbumResource> albums, int metadataProfileId)
         {
+            if (metadataProfileId == 0)
+            {
+                return new List<AlbumResource>();
+            }
+
             var metadataProfile = _metadataProfileService.Exists(metadataProfileId) ? _metadataProfileService.Get(metadataProfileId) : _metadataProfileService.All().First();
             var primaryTypes = new HashSet<string>(metadataProfile.PrimaryAlbumTypes.Where(s => s.Allowed).Select(s => s.PrimaryAlbumType.Name));
             var secondaryTypes = new HashSet<string>(metadataProfile.SecondaryAlbumTypes.Where(s => s.Allowed).Select(s => s.SecondaryAlbumType.Name));
@@ -247,6 +252,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                                     .AddQueryParam("type", "album")
                                     .AddQueryParam("query", title.ToLower().Trim())
                                     .AddQueryParam("artist", artist.IsNotNullOrWhiteSpace() ? artist.ToLower().Trim() : string.Empty)
+                                    .AddQueryParam("includeTracks", "1")
                                     .Build();
 
 
@@ -280,15 +286,18 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
 
         private Album MapSearchResult(AlbumResource resource)
         {
-            var album = _albumService.FindById(resource.Id) ?? MapAlbum(resource, null);
+            var artists = resource.Artists.Select(MapArtistMetadata).ToDictionary(x => x.ForeignArtistId, x => x);
 
             var artist = _artistService.FindById(resource.ArtistId);
             if (artist == null)
             {
                 artist = new Artist();
-                artist.Metadata = MapArtistMetadata(resource.Artists.Single(x => x.Id == resource.ArtistId));
+                artist.Metadata = artists[resource.ArtistId];
             }
+
+            var album = _albumService.FindById(resource.Id) ?? MapAlbum(resource, artists);
             album.Artist = artist;
+            album.ArtistMetadata = artist.Metadata.Value;
 
             return album;
         }

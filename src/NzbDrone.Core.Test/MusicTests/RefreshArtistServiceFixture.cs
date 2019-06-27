@@ -12,6 +12,7 @@ using NzbDrone.Core.Music;
 using NzbDrone.Core.Music.Commands;
 using NzbDrone.Test.Common;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.ImportLists.Exclusions;
 
 namespace NzbDrone.Core.Test.MusicTests
 {
@@ -57,6 +58,10 @@ namespace NzbDrone.Core.Test.MusicTests
             Mocker.GetMock<IMediaFileService>()
                 .Setup(x => x.GetFilesByArtist(It.IsAny<int>()))
                 .Returns(new List<TrackFile>());
+
+            Mocker.GetMock<IImportListExclusionService>()
+                .Setup(x => x.FindByForeignId(It.IsAny<List<string>>()))
+                .Returns(new List<ImportListExclusion>());
         }
 
         private void GivenNewArtistInfo(Artist artist)

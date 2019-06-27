@@ -18,6 +18,7 @@ namespace NzbDrone.Core.Music
             Ratings = new Ratings();
             Artist = new Artist();
             OldForeignAlbumIds = new List<string>();
+            AddOptions = new AddAlbumOptions();
         }
 
         public const string RELEASE_DATE_FORMAT = "yyyy-MM-dd";
@@ -45,7 +46,7 @@ namespace NzbDrone.Core.Music
         public bool AnyReleaseOk { get; set; }
         public DateTime? LastInfoSync { get; set; }
         public DateTime Added { get; set; }
-        public AddArtistOptions AddOptions { get; set; }
+        public AddAlbumOptions AddOptions { get; set; }
 
         // These are dynamically queried from other tables
         public LazyLoaded<ArtistMetadata> ArtistMetadata { get; set; }

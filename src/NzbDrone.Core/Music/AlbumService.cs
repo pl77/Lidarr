@@ -22,7 +22,7 @@ namespace NzbDrone.Core.Music
         Album FindByTitle(int artistId, string title);
         Album FindByTitleInexact(int artistId, string title);
         List<Album> GetCandidates(int artistId, string title);
-        void DeleteAlbum(int albumId, bool deleteFiles);
+        void DeleteAlbum(int albumId, bool deleteFiles, bool addImportListExclusion = false);
         List<Album> GetAllAlbums();
         Album UpdateAlbum(Album album);
         List<Album> UpdateAlbums(List<Album> album);
@@ -60,16 +60,17 @@ namespace NzbDrone.Core.Music
         {
             _albumRepository.Insert(newAlbum);
 
-            //_eventAggregator.PublishEvent(new AlbumAddedEvent(GetAlbum(newAlbum.Id)));
+            _eventAggregator.PublishEvent(new AlbumAddedEvent(GetAlbum(newAlbum.Id)));
 
             return newAlbum;
         }
 
-        public void DeleteAlbum(int albumId, bool deleteFiles)
+        public void DeleteAlbum(int albumId, bool deleteFiles, bool addImportListExclusion = false)
         {
             var album = _albumRepository.Get(albumId);
+            album.Artist.LazyLoad();
             _albumRepository.Delete(albumId);
-            _eventAggregator.PublishEvent(new AlbumDeletedEvent(album, deleteFiles));
+            _eventAggregator.PublishEvent(new AlbumDeletedEvent(album, deleteFiles, addImportListExclusion));
         }
 
         public Album FindById(string lidarrId)
@@ -239,7 +240,7 @@ namespace NzbDrone.Core.Music
 
             foreach (var album in albums)
             {
-                _eventAggregator.PublishEvent(new AlbumDeletedEvent(album, false));
+                _eventAggregator.PublishEvent(new AlbumDeletedEvent(album, false, false));
             }
         }
 

@@ -24,8 +24,10 @@ namespace Lidarr.Api.V1.Albums
 
     {
         protected readonly IReleaseService _releaseService;
+        protected readonly IAddAlbumService _addAlbumService;
 
         public AlbumModule(IAlbumService albumService,
+                           IAddAlbumService addAlbumService,
                            IReleaseService releaseService,
                            IArtistStatisticsService artistStatisticsService,
                            IMapCoversToLocal coverMapper,
@@ -34,8 +36,12 @@ namespace Lidarr.Api.V1.Albums
         : base(albumService, artistStatisticsService, coverMapper, upgradableSpecification, signalRBroadcaster)
         {
             _releaseService = releaseService;
+            _addAlbumService = addAlbumService;
+
             GetResourceAll = GetAlbums;
+            CreateResource = AddAlbum;
             UpdateResource = UpdateAlbum;
+            DeleteResource = DeleteAlbum;
             Put["/monitor"] = x => SetAlbumsMonitored();
         }
 
@@ -64,6 +70,11 @@ namespace Lidarr.Api.V1.Albums
 
                 var album = _albumService.FindById(foreignAlbumId);
 
+                if (album == null)
+                {
+                    return MapToResource(new List<Album>(), false);
+                }
+
                 if (includeAllArtistAlbumsQuery.HasValue && Convert.ToBoolean(includeAllArtistAlbumsQuery.Value))
                 {
                     return MapToResource(_albumService.GetAlbumsByArtist(album.ArtistId), false);
@@ -83,6 +94,13 @@ namespace Lidarr.Api.V1.Albums
             return MapToResource(_albumService.GetAlbums(albumIds), false);
         }
 
+        private int AddAlbum(AlbumResource albumResource)
+        {
+            var album = _addAlbumService.AddAlbum(albumResource.ToModel());
+
+            return album.Id;
+        }
+
         private void UpdateAlbum(AlbumResource albumResource)
         {
             var album = _albumService.GetAlbum(albumResource.Id);
@@ -93,6 +111,14 @@ namespace Lidarr.Api.V1.Albums
             _releaseService.UpdateMany(model.AlbumReleases.Value);
 
             BroadcastResourceChange(ModelAction.Updated, model.Id);
+        }
+
+        private void DeleteAlbum(int id)
+        {
+            var deleteFiles = Request.GetBooleanQueryParameter("deleteFiles");
+            var addImportListExclusion = Request.GetBooleanQueryParameter("addImportListExclusion");
+
+            _albumService.DeleteAlbum(id, deleteFiles, addImportListExclusion);
         }
 
         private Response SetAlbumsMonitored()
@@ -118,6 +144,11 @@ namespace Lidarr.Api.V1.Albums
         public void Handle(AlbumEditedEvent message)
         {
             BroadcastResourceChange(ModelAction.Updated, MapToResource(message.Album, true));
+        }
+
+        public void Handle(AlbumDeletedEvent message)
+        {
+            BroadcastResourceChange(ModelAction.Deleted, message.Album.ToResource());
         }
 
         public void Handle(AlbumImportedEvent message)

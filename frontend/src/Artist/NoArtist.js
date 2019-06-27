@@ -20,7 +20,7 @@ function NoArtist(props) {
   return (
     <div>
       <div className={styles.message}>
-        No artist found, to get started you'll want to add a new artist or import some existing ones.
+        No artist found, to get started you'll want to add a new artist or album or import some existing ones.
       </div>
 
       <div className={styles.buttonContainer}>
@@ -34,12 +34,22 @@ function NoArtist(props) {
 
       <div className={styles.buttonContainer}>
         <Button
-          to="/add/new"
+          to="/add/artist"
           kind={kinds.PRIMARY}
         >
           Add New Artist
         </Button>
       </div>
+
+      <div className={styles.buttonContainer}>
+        <Button
+          to="/add/album"
+          kind={kinds.PRIMARY}
+        >
+          Add New Album
+        </Button>
+      </div>
+
     </div>
   );
 }

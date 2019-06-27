@@ -120,7 +120,7 @@ namespace NzbDrone.Core.Music
         
         protected override UpdateResult MoveEntity(Artist local, Artist remote)
         {
-            _logger.Debug("Updating MusicBrainz id for {local} to {remote}");
+            _logger.Debug($"Updating MusicBrainz id for {local} to {remote}");
 
             // We are moving from one metadata to another (will already have been poplated)
             local.ArtistMetadataId = remote.Metadata.Value.Id;
@@ -185,7 +185,10 @@ namespace NzbDrone.Core.Music
 
         protected override List<Album> GetRemoteChildren(Artist remote)
         {
-            return remote.Albums.Value.DistinctBy(m => m.ForeignAlbumId).ToList();
+            var all = remote.Albums.Value.DistinctBy(m => m.ForeignAlbumId).ToList();
+            var ids = all.SelectMany(x => x.OldForeignAlbumIds.Concat(new List<string> { x.ForeignAlbumId })).ToList();
+            var excluded = _importListExclusionService.FindByForeignId(ids).Select(x => x.ForeignId).ToList();
+            return all.Where(x => !excluded.Contains(x.ForeignAlbumId) && !x.OldForeignAlbumIds.Any(y => excluded.Contains(y))).ToList();
         }
 
         protected override List<Album> GetLocalChildren(Artist entity, List<Album> remoteChildren)

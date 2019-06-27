@@ -60,6 +60,7 @@ class AddNewArtistModalContent extends Component {
   render() {
     const {
       artistName,
+      disambiguation,
       overview,
       images,
       isAdding,
@@ -81,7 +82,7 @@ class AddNewArtistModalContent extends Component {
     return (
       <ModalContent onModalClose={onModalClose}>
         <ModalHeader>
-          {artistName}
+          Add new Artist
         </ModalHeader>
 
         <ModalBody>
@@ -99,6 +100,15 @@ class AddNewArtistModalContent extends Component {
             }
 
             <div className={styles.info}>
+              <div className={styles.name}>
+                {artistName}
+              </div>
+
+              {
+                !!disambiguation &&
+                  <span className={styles.disambiguation}>({disambiguation})</span>
+              }
+
               {
                 overview ?
                   <div className={styles.overview}>
@@ -238,6 +248,7 @@ class AddNewArtistModalContent extends Component {
 
 AddNewArtistModalContent.propTypes = {
   artistName: PropTypes.string.isRequired,
+  disambiguation: PropTypes.string.isRequired,
   overview: PropTypes.string,
   images: PropTypes.arrayOf(PropTypes.object).isRequired,
   isAdding: PropTypes.bool.isRequired,

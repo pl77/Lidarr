@@ -20,13 +20,17 @@ const SIDEBAR_WIDTH = parseInt(dimensions.sidebarWidth);
 const links = [
   {
     iconName: icons.ARTIST_CONTINUING,
-    title: 'Artist',
+    title: 'Library',
     to: '/',
     alias: '/artist',
     children: [
       {
-        title: 'Add New',
-        to: '/add/new'
+        title: 'Add Artist',
+        to: '/add/artist'
+      },
+      {
+        title: 'Add Album',
+        to: '/add/album'
       },
       {
         title: 'Import',

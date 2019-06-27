@@ -377,14 +377,18 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             // most general version, nothing has been specified.
             // get all plausible artists, then all plausible albums, then get releases for each of these.
 
+            var candidateReleases = new List<CandidateAlbumRelease>();
+
             // check if it looks like VA.
             if (TrackGroupingService.IsVariousArtists(localAlbumRelease.LocalTracks))
             {
-                throw new NotImplementedException("Various artists not supported");
+                var va = _artistService.FindById(VariousArtistIds[0]);
+                if (va != null)
+                {
+                    candidateReleases.AddRange(GetCandidatesByArtist(localAlbumRelease, va, includeExisting));
+                }
             }
 
-            var candidateReleases = new List<CandidateAlbumRelease>();
-            
             var artistTag = MostCommon(localAlbumRelease.LocalTracks.Select(x => x.FileTrackInfo.ArtistTitle)) ?? "";
             if (artistTag.IsNotNullOrWhiteSpace())
             {

@@ -126,7 +126,9 @@ namespace NzbDrone.Core.Music
 
         protected override bool ShouldDelete(Album local)
         {
-            return !_mediaFileService.GetFilesByAlbum(local.Id).Any();
+            // not manually added and has no files
+            return local.AddOptions.AddType != AlbumAddType.Manual &&
+                !_mediaFileService.GetFilesByAlbum(local.Id).Any();
         }
 
         protected override void LogProgress(Album local)
