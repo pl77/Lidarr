@@ -11,7 +11,6 @@ import * as albums from './albumActions';
 import * as trackFiles from './trackFileActions';
 import * as albumHistory from './albumHistoryActions';
 import * as history from './historyActions';
-import * as importArtist from './importArtistActions';
 import * as interactiveImportActions from './interactiveImportActions';
 import * as oAuth from './oAuthActions';
 import * as organizePreview from './organizePreviewActions';
@@ -45,7 +44,6 @@ export default [
   trackFiles,
   albumHistory,
   history,
-  importArtist,
   interactiveImportActions,
   oAuth,
   organizePreview,

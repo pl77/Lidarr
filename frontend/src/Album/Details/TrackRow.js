@@ -44,7 +44,6 @@ class TrackRow extends Component {
       title,
       duration,
       trackFilePath,
-      trackFileRelativePath,
       columns
     } = this.props;
 
@@ -99,16 +98,6 @@ class TrackRow extends Component {
                 <TableRowCell key={name}>
                   {
                     trackFilePath
-                  }
-                </TableRowCell>
-              );
-            }
-
-            if (name === 'relativePath') {
-              return (
-                <TableRowCell key={name}>
-                  {
-                    trackFileRelativePath
                   }
                 </TableRowCell>
               );
@@ -197,7 +186,6 @@ TrackRow.propTypes = {
   duration: PropTypes.number.isRequired,
   isSaving: PropTypes.bool,
   trackFilePath: PropTypes.string,
-  trackFileRelativePath: PropTypes.string,
   mediaInfo: PropTypes.object,
   columns: PropTypes.arrayOf(PropTypes.object).isRequired
 };

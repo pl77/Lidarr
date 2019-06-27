@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using NzbDrone.Core.Datastore;
-
 
 namespace NzbDrone.Core.RootFolders
 {
@@ -10,7 +8,5 @@ namespace NzbDrone.Core.RootFolders
 
         public long? FreeSpace { get; set; }
         public long? TotalSpace { get; set; }
-
-        public List<UnmappedFolder> UnmappedFolders { get; set; }
     }
 }

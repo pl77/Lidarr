@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using NLog;
 using NzbDrone.Common;
-using NzbDrone.Common.Extensions;
+using NzbDrone.Core.Housekeeping;
+using NzbDrone.Core.Housekeeping.Housekeepers;
 using NzbDrone.Core.Music;
 
 namespace NzbDrone.Core.MediaFiles
 {
     public interface IMediaFileTableCleanupService
     {
-        void Clean(Artist artist, List<string> filesOnDisk);
+        void Clean(string folder, List<string> filesOnDisk);
     }
 
     public class MediaFileTableCleanupService : IMediaFileTableCleanupService
@@ -18,54 +18,42 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IMediaFileService _mediaFileService;
         private readonly ITrackService _trackService;
         private readonly Logger _logger;
+        private readonly IHousekeepingTask _housekeeper;
 
         public MediaFileTableCleanupService(IMediaFileService mediaFileService,
                                             ITrackService trackService,
+                                            CleanupOrphanedTrackFiles housekeeper,
                                             Logger logger)
         {
             _mediaFileService = mediaFileService;
             _trackService = trackService;
+            _housekeeper = housekeeper;
             _logger = logger;
         }
 
-        public void Clean(Artist artist, List<string> filesOnDisk)
+        public void Clean(string folder, List<string> filesOnDisk)
         {
-            var artistFiles = _mediaFileService.GetFilesByArtist(artist.Id);
-            var tracks = _trackService.GetTracksByArtist(artist.Id);
-
-
+            var files = _mediaFileService.GetFilesWithBasePath(folder);
             var filesOnDiskKeys = new HashSet<string>(filesOnDisk, PathEqualityComparer.Instance);
             
-            foreach (var artistFile in artistFiles)
+            foreach (var file in files)
             {
-                var trackFile = artistFile;
-                var trackFilePath = trackFile.Path;
-
                 try
                 {
-                    if (!filesOnDiskKeys.Contains(trackFilePath))
+                    if (!filesOnDiskKeys.Contains(file.Path))
                     {
-                        _logger.Debug("File [{0}] no longer exists on disk, removing from db", trackFilePath);
-                        _mediaFileService.Delete(artistFile, DeleteMediaFileReason.MissingFromDisk);
+                        _logger.Debug("File [{0}] no longer exists on disk, removing from db", file.Path);
+                        _mediaFileService.Delete(file, DeleteMediaFileReason.MissingFromDisk);
                         continue;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Unable to cleanup TrackFile in DB: {0}", trackFile.Id);
+                    _logger.Error(ex, "Unable to cleanup TrackFile in DB: {0}", file.Id);
                 }
             }
 
-            foreach (var t in tracks)
-            {
-                var track = t;
-
-                if (track.TrackFileId > 0 && artistFiles.None(f => f.Id == track.TrackFileId))
-                {
-                    track.TrackFileId = 0;
-                    _trackService.UpdateTrack(track);
-                }
-            }
+            _housekeeper.Clean();
         }
     }
 }

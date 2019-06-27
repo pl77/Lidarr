@@ -18,7 +18,10 @@ namespace NzbDrone.Core.Music
 
         public void Handle(ArtistAddedEvent message)
         {
-            _commandQueueManager.Push(new RefreshArtistCommand(message.Artist.Id, true));
+            if (message.DoRefresh)
+            {
+                _commandQueueManager.Push(new RefreshArtistCommand(message.Artist.Id, true));
+            }
         }
 
         public void Handle(ArtistsImportedEvent message)

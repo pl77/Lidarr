@@ -45,7 +45,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                 .Returns(_rootFolder);
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Setup(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>()))
+                .Setup(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>(), It.IsAny<ImportArtistDefaults>()))
                 .Returns(new List<ImportDecision<LocalTrack>>());
 
             Mocker.GetMock<IMediaFileService>()
@@ -57,7 +57,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                 .Returns(new List<TrackFile>());
 
             Mocker.GetMock<IMediaFileService>()
-                .Setup(v => v.FilterUnchangedFiles(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>()))
+                .Setup(v => v.FilterUnchangedFiles(It.IsAny<List<IFileInfo>>(), It.IsAny<FilterFilesType>()))
                 .Returns((List<IFileInfo> files, Artist artist) => files);
         }
 
@@ -111,7 +111,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
         [Test]
         public void should_not_scan_if_root_folder_does_not_exist()
         {
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             ExceptionVerification.ExpectedWarns(1);
 
@@ -119,7 +119,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                   .Verify(v => v.FolderExists(_artist.Path), Times.Never());
 
             Mocker.GetMock<IMediaFileTableCleanupService>()
-                  .Verify(v => v.Clean(It.IsAny<Artist>(), It.IsAny<List<string>>()), Times.Never());
+                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Never());
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
         {
             GivenRootFolder();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             ExceptionVerification.ExpectedWarns(1);
 
@@ -135,10 +135,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                   .Verify(v => v.FolderExists(_artist.Path), Times.Never());
 
             Mocker.GetMock<IMediaFileTableCleanupService>()
-                  .Verify(v => v.Clean(It.IsAny<Artist>(), It.IsAny<List<string>>()), Times.Never());
+                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Never());
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true), Times.Never());
+                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true, null), Times.Never());
         }
 
         [Test]
@@ -150,7 +150,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                   .Setup(s => s.CreateEmptyArtistFolders)
                   .Returns(true);
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             DiskProvider.FolderExists(_artist.Path).Should().BeTrue();
         }
@@ -164,7 +164,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                   .Setup(s => s.CreateEmptyArtistFolders)
                   .Returns(false);
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             DiskProvider.FolderExists(_artist.Path).Should().BeFalse();
         }
@@ -174,15 +174,15 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
         {
             GivenRootFolder(_otherArtistFolder);
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             DiskProvider.FolderExists(_artist.Path).Should().BeFalse();
 
             Mocker.GetMock<IMediaFileTableCleanupService>()
-                  .Verify(v => v.Clean(It.IsAny<Artist>(), It.IsAny<List<string>>()), Times.Once());
+                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Once());
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true), Times.Never());
+                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true, null), Times.Never());
         }
 
         [Test]
@@ -194,13 +194,13 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                   .Setup(s => s.CreateEmptyArtistFolders)
                   .Returns(true);
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileTableCleanupService>()
-                  .Verify(v => v.Clean(It.IsAny<Artist>(), It.IsAny<List<string>>()), Times.Once());
+                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Once());
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true), Times.Never());
+                .Verify(v => v.GetImportDecisions(It.IsAny<List<IFileInfo>>(), _artist, FilterFilesType.Known, true, null), Times.Never());
         }
 
         [Test]
@@ -214,10 +214,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 2), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 2), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -234,10 +234,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -252,10 +252,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -275,10 +275,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 2", "s02e02.flac"),
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 4), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 4), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -291,10 +291,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Album 1", ".t01.mp3")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -310,10 +310,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -330,10 +330,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -347,10 +347,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -364,10 +364,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -383,10 +383,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "Season 1", "s01e01.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 2), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 2), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         [Test]
@@ -401,16 +401,16 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                            Path.Combine(_artist.Path, "24 The Status Quo Combustion.flac")
                        });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMakeImportDecision>()
-                  .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true), Times.Once());
+                .Verify(v => v.GetImportDecisions(It.Is<List<IFileInfo>>(l => l.Count == 1), _artist, FilterFilesType.Known, true, null), Times.Once());
         }
 
         private void GivenRejections()
         {
             Mocker.GetMock<IMakeImportDecision>()
-                .Setup(x => x.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>()))
+                .Setup(x => x.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>(), It.IsAny<ImportArtistDefaults>()))
                 .Returns((List<IFileInfo> fileList, Artist artist, FilterFilesType filter, bool includeExisting) =>
                           fileList.Select(x => new LocalTrack {
                                   Artist = artist,
@@ -434,7 +434,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
             GivenKnownFiles(new List<string>());
             GivenRejections();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.AddMany(It.Is<List<TrackFile>>(l => l.Select(t => t.Path).SequenceEqual(files))),
@@ -453,7 +453,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
             GivenKnownFiles(files.GetRange(1, 1));
             GivenRejections();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.AddMany(It.Is<List<TrackFile>>(l => l.Select(t => t.Path).SequenceEqual(files.GetRange(0, 1)))),
@@ -472,7 +472,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
             GivenKnownFiles(files);
             GivenRejections();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.AddMany(It.Is<List<TrackFile>>(l => l.Count == 0)),
@@ -495,7 +495,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
             GivenKnownFiles(files);
             GivenRejections();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.Update(It.Is<List<TrackFile>>(l => l.Count == 0)),
@@ -519,7 +519,7 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
             GivenKnownFiles(files);
             GivenRejections();
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.Update(It.Is<List<TrackFile>>(l => l.Count == 2)),
@@ -548,10 +548,10 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                 .Build();
 
             Mocker.GetMock<IMakeImportDecision>()
-                .Setup(x => x.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>()))
+                .Setup(x => x.GetImportDecisions(It.IsAny<List<IFileInfo>>(), It.IsAny<Artist>(), It.IsAny<FilterFilesType>(), It.IsAny<bool>(), It.IsAny<ImportArtistDefaults>()))
                 .Returns(new List<ImportDecision<LocalTrack>> { new ImportDecision<LocalTrack>(localTrack, new Rejection("Reject")) });
 
-            Subject.Scan(_artist);
+            Subject.Scan(new List<string> { _artist.Path });
 
             Mocker.GetMock<IMediaFileService>()
                 .Verify(x => x.Update(It.Is<List<TrackFile>>(

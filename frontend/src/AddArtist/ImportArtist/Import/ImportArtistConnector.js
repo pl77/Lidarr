@@ -4,10 +4,12 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createSelector } from 'reselect';
-import { setImportArtistValue, importArtist, clearImportArtist } from 'Store/Actions/importArtistActions';
+import { push } from 'connected-react-router';
 import { fetchRootFolders } from 'Store/Actions/rootFolderActions';
 import { setAddArtistDefault } from 'Store/Actions/addArtistActions';
+import { executeCommand } from 'Store/Actions/commandActions';
 import createRouteMatchShape from 'Helpers/Props/Shapes/createRouteMatchShape';
+import selectSettings from 'Store/Selectors/selectSettings';
 import ImportArtist from './ImportArtist';
 
 function createMapStateToProps() {
@@ -16,7 +18,6 @@ function createMapStateToProps() {
     (state) => state.rootFolders,
     (state) => state.addArtist,
     (state) => state.importArtist,
-    (state) => state.settings.qualityProfiles,
     (state) => state.settings.languageProfiles,
     (state) => state.settings.metadataProfiles,
     (
@@ -24,7 +25,6 @@ function createMapStateToProps() {
       rootFolders,
       addArtist,
       importArtistState,
-      qualityProfiles,
       languageProfiles,
       metadataProfiles
     ) => {
@@ -37,19 +37,29 @@ function createMapStateToProps() {
 
       const rootFolderId = parseInt(match.params.rootFolderId);
 
+      const {
+        isAdding,
+        addError,
+        defaults
+      } = addArtist;
+
+      const {
+        settings,
+        validationErrors,
+        validationWarnings
+      } = selectSettings(defaults, {}, addError);
+
       const result = {
         rootFolderId,
         rootFoldersFetching,
         rootFoldersPopulated,
         rootFoldersError,
-        qualityProfiles: qualityProfiles.items,
-        languageProfiles: languageProfiles.items,
-        metadataProfiles: metadataProfiles.items,
         showLanguageProfile: languageProfiles.items.length > 1,
         showMetadataProfile: metadataProfiles.items.length > 1,
-        defaultQualityProfileId: addArtist.defaults.qualityProfileId,
-        defaultLanguageProfileId: addArtist.defaults.languageProfileId,
-        defaultMetadataProfileId: addArtist.defaults.metadataProfileId
+        isAdding,
+        validationErrors,
+        validationWarnings,
+        ...settings
       };
 
       if (items.length) {
@@ -57,8 +67,7 @@ function createMapStateToProps() {
 
         return {
           ...result,
-          ...rootFolder,
-          items: importArtistState.items
+          ...rootFolder
         };
       }
 
@@ -68,11 +77,10 @@ function createMapStateToProps() {
 }
 
 const mapDispatchToProps = {
-  dispatchSetImportArtistValue: setImportArtistValue,
-  dispatchImportArtist: importArtist,
-  dispatchClearImportArtist: clearImportArtist,
+  push,
   dispatchFetchRootFolders: fetchRootFolders,
-  dispatchSetAddArtistDefault: setAddArtistDefault
+  dispatchSetAddArtistDefault: setAddArtistDefault,
+  dispatchExecuteCommand: executeCommand
 };
 
 class ImportArtistConnector extends Component {
@@ -82,72 +90,29 @@ class ImportArtistConnector extends Component {
 
   componentDidMount() {
     const {
-      qualityProfiles,
-      languageProfiles,
-      metadataProfiles,
-      defaultQualityProfileId,
-      defaultLanguageProfileId,
-      defaultMetadataProfileId,
-      dispatchFetchRootFolders,
-      dispatchSetAddArtistDefault
+      dispatchFetchRootFolders
     } = this.props;
 
     if (!this.props.rootFoldersPopulated) {
       dispatchFetchRootFolders();
     }
-
-    let setDefaults = false;
-    const setDefaultPayload = {};
-
-    if (
-      !defaultQualityProfileId ||
-      !qualityProfiles.some((p) => p.id === defaultQualityProfileId)
-    ) {
-      setDefaults = true;
-      setDefaultPayload.qualityProfileId = qualityProfiles[0].id;
-    }
-
-    if (
-      !defaultLanguageProfileId ||
-      !languageProfiles.some((p) => p.id === defaultLanguageProfileId)
-    ) {
-      setDefaults = true;
-      setDefaultPayload.languageProfileId = languageProfiles[0].id;
-    }
-
-    if (
-      !defaultMetadataProfileId ||
-      !metadataProfiles.some((p) => p.id === defaultMetadataProfileId)
-    ) {
-      setDefaults = true;
-      setDefaultPayload.metadataProfileId = metadataProfiles[0].id;
-    }
-
-    if (setDefaults) {
-      dispatchSetAddArtistDefault(setDefaultPayload);
-    }
-  }
-
-  componentWillUnmount() {
-    this.props.dispatchClearImportArtist();
   }
 
   //
   // Listeners
 
-  onInputChange = (ids, name, value) => {
+  onInputChange = ({ name, value }) => {
     this.props.dispatchSetAddArtistDefault({ [name]: value });
-
-    ids.forEach((id) => {
-      this.props.dispatchSetImportArtistValue({
-        id,
-        [name]: value
-      });
-    });
   }
 
-  onImportPress = (ids) => {
-    this.props.dispatchImportArtist({ ids });
+  onImportPress = (defaults) => {
+    this.props.dispatchExecuteCommand({
+      name: 'RescanFolders',
+      folders: [this.props.path],
+      importArtistDefaults: defaults
+    });
+
+    this.props.push(`${window.Lidarr.urlBase}/`);
   }
 
   //
@@ -170,18 +135,12 @@ const routeMatchShape = createRouteMatchShape({
 
 ImportArtistConnector.propTypes = {
   match: routeMatchShape.isRequired,
+  path: PropTypes.string,
   rootFoldersPopulated: PropTypes.bool.isRequired,
-  qualityProfiles: PropTypes.arrayOf(PropTypes.object).isRequired,
-  languageProfiles: PropTypes.arrayOf(PropTypes.object).isRequired,
-  metadataProfiles: PropTypes.arrayOf(PropTypes.object).isRequired,
-  defaultQualityProfileId: PropTypes.number.isRequired,
-  defaultLanguageProfileId: PropTypes.number.isRequired,
-  defaultMetadataProfileId: PropTypes.number.isRequired,
-  dispatchSetImportArtistValue: PropTypes.func.isRequired,
-  dispatchImportArtist: PropTypes.func.isRequired,
-  dispatchClearImportArtist: PropTypes.func.isRequired,
+  push: PropTypes.func.isRequired,
   dispatchFetchRootFolders: PropTypes.func.isRequired,
-  dispatchSetAddArtistDefault: PropTypes.func.isRequired
+  dispatchSetAddArtistDefault: PropTypes.func.isRequired,
+  dispatchExecuteCommand: PropTypes.func.isRequired
 };
 
 export default connect(createMapStateToProps, mapDispatchToProps)(ImportArtistConnector);

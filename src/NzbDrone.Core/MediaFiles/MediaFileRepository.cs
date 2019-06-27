@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marr.Data.QGen;
+using NzbDrone.Common;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Music;
@@ -13,6 +15,7 @@ namespace NzbDrone.Core.MediaFiles
         List<TrackFile> GetFilesByAlbum(int albumId);
         List<TrackFile> GetFilesByRelease(int releaseId);
         List<TrackFile> GetFilesWithBasePath(string path);
+        List<TrackFile> GetFileWithPath(List<string> path);
         TrackFile GetFileWithPath(string path);
         void DeleteFilesByAlbum(int albumId);
     }
@@ -75,6 +78,11 @@ namespace NzbDrone.Core.MediaFiles
         public TrackFile GetFileWithPath(string path)
         {
             return Query.Where(x => x.Path == path).SingleOrDefault();
+        }
+
+        public List<TrackFile> GetFileWithPath(List<string> paths)
+        {
+            return All().Join(paths, x => x.Path, x => x, (file, path) => file, PathEqualityComparer.Instance).ToList();
         }
     }
 }

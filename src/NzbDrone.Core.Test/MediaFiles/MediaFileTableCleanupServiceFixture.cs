@@ -69,7 +69,7 @@ namespace NzbDrone.Core.Test.MediaFiles
 
             GivenTrackFiles(trackFiles);
 
-            Subject.Clean(_artist, FilesOnDisk(trackFiles));
+            Subject.Clean(_artist.Path, FilesOnDisk(trackFiles));
 
             Mocker.GetMock<ITrackService>().Verify(c => c.UpdateTrack(It.IsAny<Track>()), Times.Never());
         }
@@ -86,7 +86,7 @@ namespace NzbDrone.Core.Test.MediaFiles
 
             GivenTrackFiles(trackFiles);
 
-            Subject.Clean(_artist, FilesOnDisk(trackFiles.Where(e => e.Path != DELETED_PATH)));
+            Subject.Clean(_artist.Path, FilesOnDisk(trackFiles.Where(e => e.Path != DELETED_PATH)));
 
             Mocker.GetMock<IMediaFileService>().Verify(c => c.Delete(It.Is<TrackFile>(e => e.Path == DELETED_PATH), DeleteMediaFileReason.MissingFromDisk), Times.Exactly(2));
         }
@@ -96,7 +96,7 @@ namespace NzbDrone.Core.Test.MediaFiles
         {
             GivenTrackFiles(new List<TrackFile>());
 
-            Subject.Clean(_artist, new List<string>());
+            Subject.Clean(_artist.Path, new List<string>());
 
             Mocker.GetMock<ITrackService>().Verify(c => c.UpdateTrack(It.Is<Track>(e => e.TrackFileId == 0)), Times.Exactly(10));
         }
@@ -111,7 +111,7 @@ namespace NzbDrone.Core.Test.MediaFiles
 
             GivenTrackFiles(trackFiles);
 
-            Subject.Clean(_artist, FilesOnDisk(trackFiles));
+            Subject.Clean(_artist.Path, FilesOnDisk(trackFiles));
 
             Mocker.GetMock<ITrackService>().Verify(c => c.UpdateTrack(It.IsAny<Track>()), Times.Never());
         }

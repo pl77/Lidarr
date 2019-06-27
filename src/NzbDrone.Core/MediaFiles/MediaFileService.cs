@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using NLog;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Common;
-using NzbDrone.Core.Music;
 using System;
 using NzbDrone.Core.Music.Events;
 using NzbDrone.Common.Extensions;
@@ -23,10 +21,11 @@ namespace NzbDrone.Core.MediaFiles
         List<TrackFile> GetFilesByArtist(int artistId);
         List<TrackFile> GetFilesByAlbum(int albumId);
         List<TrackFile> GetFilesByRelease(int releaseId);
-        List<IFileInfo> FilterUnchangedFiles(List<IFileInfo> files, Artist artist, FilterFilesType filter);
+        List<IFileInfo> FilterUnchangedFiles(List<IFileInfo> files, FilterFilesType filter);
         TrackFile Get(int id);
         List<TrackFile> Get(IEnumerable<int> ids);
         List<TrackFile> GetFilesWithBasePath(string path);
+        List<TrackFile> GetFileWithPath(List<string> path);
         TrackFile GetFileWithPath(string path);
         void UpdateMediaInfo(List<TrackFile> trackFiles);
     }
@@ -81,11 +80,16 @@ namespace NzbDrone.Core.MediaFiles
             }
         }
 
-        public List<IFileInfo> FilterUnchangedFiles(List<IFileInfo> files, Artist artist, FilterFilesType filter)
+        public List<IFileInfo> FilterUnchangedFiles(List<IFileInfo> files, FilterFilesType filter)
         {
+            if (filter == FilterFilesType.None)
+            {
+                return files;
+            }
+            
             _logger.Debug($"Filtering {files.Count} files for unchanged files");
 
-            var knownFiles = GetFilesWithBasePath(artist.Path);
+            var knownFiles = GetFileWithPath(files.Select(x => x.FullName).ToList());
             _logger.Trace($"Got {knownFiles.Count} existing files");
 
             if (!knownFiles.Any()) return files;
@@ -139,6 +143,11 @@ namespace NzbDrone.Core.MediaFiles
         public List<TrackFile> GetFilesWithBasePath(string path)
         {
             return _mediaFileRepository.GetFilesWithBasePath(path);
+        }
+
+        public List<TrackFile> GetFileWithPath(List<string> path)
+        {
+            return _mediaFileRepository.GetFileWithPath(path);
         }
 
         public TrackFile GetFileWithPath(string path)

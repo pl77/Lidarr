@@ -13,11 +13,11 @@ function RootFolderRow(props) {
     id,
     path,
     freeSpace,
-    unmappedFolders,
+    unmappedArtists,
     onDeletePress
   } = props;
 
-  const unmappedFoldersCount = unmappedFolders.length || '-';
+  const unmappedArtistsCount = unmappedArtists.length || '-';
 
   return (
     <TableRow>
@@ -34,8 +34,8 @@ function RootFolderRow(props) {
         {formatBytes(freeSpace) || '-'}
       </TableRowCell>
 
-      <TableRowCell className={styles.unmappedFolders}>
-        {unmappedFoldersCount}
+      <TableRowCell className={styles.unmappedArtists}>
+        {unmappedArtistsCount}
       </TableRowCell>
 
       <TableRowCell className={styles.actions}>
@@ -53,13 +53,13 @@ RootFolderRow.propTypes = {
   id: PropTypes.number.isRequired,
   path: PropTypes.string.isRequired,
   freeSpace: PropTypes.number.isRequired,
-  unmappedFolders: PropTypes.arrayOf(PropTypes.object).isRequired,
+  unmappedArtists: PropTypes.arrayOf(PropTypes.object).isRequired,
   onDeletePress: PropTypes.func.isRequired
 };
 
 RootFolderRow.defaultProps = {
   freeSpace: 0,
-  unmappedFolders: []
+  unmappedArtists: []
 };
 
 export default RootFolderRow;

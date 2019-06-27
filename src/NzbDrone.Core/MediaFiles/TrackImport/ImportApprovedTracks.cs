@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Disk;
@@ -9,17 +8,20 @@ using NzbDrone.Core.Download;
 using NzbDrone.Core.Extras;
 using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles.Events;
+using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Music;
+using NzbDrone.Core.Music.Commands;
 using NzbDrone.Core.Music.Events;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Qualities;
+using NzbDrone.Core.RootFolders;
 
 namespace NzbDrone.Core.MediaFiles.TrackImport
 {
     public interface IImportApprovedTracks
     {
-        List<ImportResult> Import(List<ImportDecision<LocalTrack>> decisions, bool replaceExisting, DownloadClientItem downloadClientItem = null, ImportMode importMode = ImportMode.Auto);
+        List<ImportResult> Import(List<ImportDecision<LocalTrack>> decisions, bool replaceExisting, DownloadClientItem downloadClientItem = null, ImportMode importMode = ImportMode.Auto, ImportArtistDefaults artistDefaults = null);
     }
 
     public class ImportApprovedTracks : IImportApprovedTracks
@@ -28,37 +30,55 @@ namespace NzbDrone.Core.MediaFiles.TrackImport
         private readonly IMediaFileService _mediaFileService;
         private readonly IAudioTagService _audioTagService;
         private readonly ITrackService _trackService;
+        private readonly IArtistService _artistService;
+        private readonly IAddArtistService _addArtistService;
+        private readonly IAlbumService _albumService;
+        private readonly IRefreshAlbumService _refreshAlbumService;
+        private readonly IRootFolderService _rootFolderService;
         private readonly IRecycleBinProvider _recycleBinProvider;
         private readonly IExtraService _extraService;
         private readonly IDiskProvider _diskProvider;
         private readonly IReleaseService _releaseService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly IManageCommandQueue _commandQueueManager;
         private readonly Logger _logger;
 
         public ImportApprovedTracks(IUpgradeMediaFiles trackFileUpgrader,
                                     IMediaFileService mediaFileService,
                                     IAudioTagService audioTagService,
                                     ITrackService trackService,
+                                    IArtistService artistService,
+                                    IAddArtistService addArtistService,
+                                    IAlbumService albumService,
+                                    IRefreshAlbumService refreshAlbumService,
+                                    IRootFolderService rootFolderService,
                                     IRecycleBinProvider recycleBinProvider,
                                     IExtraService extraService,
                                     IDiskProvider diskProvider,
                                     IReleaseService releaseService,
                                     IEventAggregator eventAggregator,
+                                    IManageCommandQueue commandQueueManager,
                                     Logger logger)
         {
             _trackFileUpgrader = trackFileUpgrader;
             _mediaFileService = mediaFileService;
             _audioTagService = audioTagService;
             _trackService = trackService;
+            _artistService = artistService;
+            _addArtistService = addArtistService;
+            _albumService = albumService;
+            _refreshAlbumService = refreshAlbumService;
+            _rootFolderService = rootFolderService;
             _recycleBinProvider = recycleBinProvider;
             _extraService = extraService;
             _diskProvider = diskProvider;
             _releaseService = releaseService;
             _eventAggregator = eventAggregator;
+            _commandQueueManager = commandQueueManager;
             _logger = logger;
         }
 
-        public List<ImportResult> Import(List<ImportDecision<LocalTrack>> decisions, bool replaceExisting, DownloadClientItem downloadClientItem = null, ImportMode importMode = ImportMode.Auto)
+        public List<ImportResult> Import(List<ImportDecision<LocalTrack>> decisions, bool replaceExisting, DownloadClientItem downloadClientItem = null, ImportMode importMode = ImportMode.Auto, ImportArtistDefaults artistDefaults = null)
         {
             var qualifiedImports = decisions.Where(c => c.Approved)
                .GroupBy(c => c.Item.Artist.Id, (i, s) => s
@@ -73,18 +93,72 @@ namespace NzbDrone.Core.MediaFiles.TrackImport
             var importResults = new List<ImportResult>();
             var allImportedTrackFiles = new List<TrackFile>();
             var allOldTrackFiles = new List<TrackFile>();
+            
+            var addedArtists = new List<Artist>();
 
             var albumDecisions = decisions.Where(e => e.Item.Album != null && e.Approved)
-                .GroupBy(e => e.Item.Album.Id).ToList();
+                .GroupBy(e => e.Item.Album.ForeignAlbumId).ToList();
 
             foreach (var albumDecision in albumDecisions)
             {
+                // add the artist if it doesn't already exist.
+                var artist = albumDecision.First().Item.Artist;
+                if (artist.Id == 0)
+                {
+                    var dbArtist = _artistService.FindById(artist.ForeignArtistId);
+                    
+                    if (dbArtist == null)
+                    {
+                        _logger.Debug($"Adding remote artist {artist}");
+
+                        artist.RootFolderPath = _rootFolderService.GetBestRootFolderPath(albumDecision.First().Item.Path);
+                        artist.MetadataProfileId = artistDefaults.MetadataProfileId;
+                        artist.LanguageProfileId = artistDefaults.LanguageProfileId;
+                        artist.QualityProfileId = artistDefaults.QualityProfileId;
+                        artist.AlbumFolder = artistDefaults.AlbumFolder;
+                        artist.Monitored = artistDefaults.Monitored != MonitorTypes.None;
+                        artist.Tags = artistDefaults.Tags;
+                        artist.AddOptions = new AddArtistOptions { Monitor = artistDefaults.Monitored };
+
+                        dbArtist = _addArtistService.AddArtist(artist, false);
+                        addedArtists.Add(dbArtist);
+                    }
+
+                    // Put in the newly loaded artist
+                    foreach (var decision in albumDecision)
+                    {
+                        decision.Item.Artist = dbArtist;
+                        decision.Item.Album.Artist = dbArtist;
+                    }
+                }
+
+                // add the album if it doesn't already exist.
                 var album = albumDecision.First().Item.Album;
-                var newRelease = albumDecision.First().Item.Release;
+                if (album.Id == 0)
+                {
+                    var dbAlbum = _albumService.FindById(album.ForeignAlbumId);
+                    
+                    if (dbAlbum == null)
+                    {
+                        _logger.Debug($"Adding remote album {album}");
+                        _albumService.AddAlbum(album);
+                        _refreshAlbumService.RefreshAlbumInfo(album, new List<Album> { album }, false);
+                        dbAlbum = _albumService.FindById(album.ForeignAlbumId);
+                    }
+
+                    // Populate the new DB album
+                    foreach (var decision in albumDecision)
+                    {
+                        // _logger.Debug($"Remote release {decision.Item.Release}");
+                        decision.Item.Album = dbAlbum;
+                        decision.Item.Release = dbAlbum.AlbumReleases.Value.Single(x => x.ForeignReleaseId == decision.Item.Release.ForeignReleaseId);
+                        var trackIds = decision.Item.Tracks.Select(x => x.ForeignTrackId).ToList();
+                        decision.Item.Tracks = decision.Item.Release.Tracks.Value.Where(x => trackIds.Contains(x.ForeignTrackId)).ToList();
+                    }
+                }
 
                 if (replaceExisting)
                 {
-                    var artist = albumDecision.First().Item.Artist;
                     var rootFolder = _diskProvider.GetParentFolder(artist.Path);
                     var previousFiles = _mediaFileService.GetFilesByAlbum(album.Id);
 
@@ -103,6 +177,7 @@ namespace NzbDrone.Core.MediaFiles.TrackImport
                 }
 
                 // set the correct release to be monitored before importing the new files
+                var newRelease = albumDecision.First().Item.Release;
                 _logger.Debug("Updating release to {0} [{1} tracks]", newRelease, newRelease.TrackCount);
                 _releaseService.SetMonitored(newRelease);
 
@@ -273,6 +348,9 @@ namespace NzbDrone.Core.MediaFiles.TrackImport
             //Adding all the rejected decisions
             importResults.AddRange(decisions.Where(c => !c.Approved)
                                             .Select(d => new ImportResult(d, d.Rejections.Select(r => r.Reason).ToArray())));
+            
+            // Refresh any artists we added
+            _commandQueueManager.PushMany(addedArtists.Select(s => new RefreshArtistCommand(s.Id, true)).ToList());
 
             return importResults;
         }

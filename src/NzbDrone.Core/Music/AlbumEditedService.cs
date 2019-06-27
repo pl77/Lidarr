@@ -25,7 +25,7 @@ namespace NzbDrone.Core.Music
                 if (!new_monitored.SetEquals(old_monitored) ||
                     (message.OldAlbum.AnyReleaseOk == false && message.Album.AnyReleaseOk == true))
                 {
-                   _commandQueueManager.Push(new RescanArtistCommand(message.Album.ArtistId));
+                   _commandQueueManager.Push(new RescanFoldersCommand());
                 }
             }
         }

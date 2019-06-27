@@ -70,7 +70,6 @@ namespace Lidarr.Api.V1.ManualImport
                 items.Add(new ManualImportItem {
                         Id = resource.Id,
                         Path = resource.Path,
-                        RelativePath = resource.RelativePath,
                         FolderName = resource.FolderName,
                         Name = resource.Name,
                         Size = resource.Size,

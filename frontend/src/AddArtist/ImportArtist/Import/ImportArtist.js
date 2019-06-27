@@ -1,13 +1,18 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import getSelectedIds from 'Utilities/Table/getSelectedIds';
-import selectAll from 'Utilities/Table/selectAll';
-import toggleSelected from 'Utilities/Table/toggleSelected';
+import { icons, kinds, inputTypes, tooltipPositions } from 'Helpers/Props';
+import Icon from 'Components/Icon';
+import SpinnerButton from 'Components/Link/SpinnerButton';
+import Form from 'Components/Form/Form';
+import FormGroup from 'Components/Form/FormGroup';
+import FormLabel from 'Components/Form/FormLabel';
+import FormInputGroup from 'Components/Form/FormInputGroup';
 import LoadingIndicator from 'Components/Loading/LoadingIndicator';
+import Popover from 'Components/Tooltip/Popover';
+import ArtistMonitoringOptionsPopoverContent from 'AddArtist/ArtistMonitoringOptionsPopoverContent';
 import PageContent from 'Components/Page/PageContent';
 import PageContentBodyConnector from 'Components/Page/PageContentBodyConnector';
-import ImportArtistTableConnector from './ImportArtistTableConnector';
-import ImportArtistFooterConnector from './ImportArtistFooterConnector';
+import styles from './ImportArtist.css';
 
 class ImportArtist extends Component {
 
@@ -18,10 +23,6 @@ class ImportArtist extends Component {
     super(props, context);
 
     this.state = {
-      allSelected: false,
-      allUnselected: false,
-      lastToggled: null,
-      selectedState: {},
       contentBody: null,
       scrollTop: 0
     };
@@ -37,39 +38,36 @@ class ImportArtist extends Component {
   //
   // Listeners
 
-  getSelectedIds = () => {
-    return getSelectedIds(this.state.selectedState, { parseIds: false });
+  onQualityProfileIdChange = ({ value }) => {
+    this.props.onInputChange({ name: 'qualityProfileId', value: parseInt(value) });
   }
 
-  onSelectAllChange = ({ value }) => {
-    // Only select non-dupes
-    this.setState(selectAll(this.state.selectedState, value));
+  onLanguageProfileIdChange = ({ value }) => {
+    this.props.onInputChange({ name: 'languageProfileId', value: parseInt(value) });
   }
 
-  onSelectedChange = ({ id, value, shiftKey = false }) => {
-    this.setState((state) => {
-      return toggleSelected(state, this.props.items, id, value, shiftKey);
-    });
-  }
-
-  onRemoveSelectedStateItem = (id) => {
-    this.setState((state) => {
-      const selectedState = Object.assign({}, state.selectedState);
-      delete selectedState[id];
-
-      return {
-        ...state,
-        selectedState
-      };
-    });
-  }
-
-  onInputChange = ({ name, value }) => {
-    this.props.onInputChange(this.getSelectedIds(), name, value);
+  onMetadataProfileIdChange = ({ value }) => {
+    this.props.onInputChange({ name: 'metadataProfileId', value: parseInt(value) });
   }
 
   onImportPress = () => {
-    this.props.onImportPress(this.getSelectedIds());
+    const {
+      monitor,
+      qualityProfileId,
+      languageProfileId,
+      metadataProfileId,
+      albumFolder,
+      tags
+    } = this.props;
+
+    this.props.onImportPress({
+      metadataProfileId: metadataProfileId.value,
+      qualityProfileId: qualityProfileId.value,
+      languageProfileId: languageProfileId.value,
+      albumFolder: albumFolder.value,
+      monitored: monitor.value,
+      tags: tags.value
+    });
   }
 
   onScroll = ({ scrollTop }) => {
@@ -81,20 +79,22 @@ class ImportArtist extends Component {
 
   render() {
     const {
-      rootFolderId,
-      path,
       rootFoldersFetching,
       rootFoldersPopulated,
       rootFoldersError,
-      unmappedFolders,
+      isAdding,
+      monitor,
+      qualityProfileId,
+      languageProfileId,
+      metadataProfileId,
+      albumFolder,
+      tags,
       showLanguageProfile,
-      showMetadataProfile
+      showMetadataProfile,
+      onInputChange
     } = this.props;
 
     const {
-      allSelected,
-      allUnselected,
-      selectedState,
       contentBody
     } = this.state;
 
@@ -115,42 +115,101 @@ class ImportArtist extends Component {
           }
 
           {
-            !rootFoldersError && rootFoldersPopulated && !unmappedFolders.length &&
+            !rootFoldersError && rootFoldersPopulated && contentBody &&
               <div>
-                All artist in {path} have been imported
+                <Form>
+                  <FormGroup>
+                    <FormLabel>
+                      Monitor
+
+                      <Popover
+                        anchor={
+                          <Icon
+                            className={styles.labelIcon}
+                            name={icons.INFO}
+                          />
+                        }
+                        title="Monitoring Options"
+                        body={<ArtistMonitoringOptionsPopoverContent />}
+                        position={tooltipPositions.RIGHT}
+                      />
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.MONITOR_ALBUMS_SELECT}
+                      name="monitor"
+                      onChange={onInputChange}
+                      {...monitor}
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Quality Profile</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.QUALITY_PROFILE_SELECT}
+                      name="qualityProfileId"
+                      onChange={this.onQualityProfileIdChange}
+                      {...qualityProfileId}
+                    />
+                  </FormGroup>
+
+                  <FormGroup className={showLanguageProfile ? undefined : styles.hideLanguageProfile}>
+                    <FormLabel>Language Profile</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.LANGUAGE_PROFILE_SELECT}
+                      name="languageProfileId"
+                      onChange={this.onLanguageProfileIdChange}
+                      {...languageProfileId}
+                    />
+                  </FormGroup>
+
+                  <FormGroup className={showMetadataProfile ? undefined : styles.hideMetadataProfile}>
+                    <FormLabel>Metadata Profile</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.METADATA_PROFILE_SELECT}
+                      name="metadataProfileId"
+                      onChange={this.onMetadataProfileIdChange}
+                      {...metadataProfileId}
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Album Folder</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.CHECK}
+                      name="albumFolder"
+                      onChange={onInputChange}
+                      {...albumFolder}
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Tags</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.TAG}
+                      name="tags"
+                      onChange={onInputChange}
+                      {...tags}
+                    />
+                  </FormGroup>
+                </Form>
+
+                <SpinnerButton
+                  className={styles.addButton}
+                  kind={kinds.SUCCESS}
+                  isSpinning={isAdding}
+                  onPress={this.onImportPress}
+                >
+                  Import
+                </SpinnerButton>
               </div>
           }
-
-          {
-            !rootFoldersError && rootFoldersPopulated && !!unmappedFolders.length && contentBody &&
-              <ImportArtistTableConnector
-                rootFolderId={rootFolderId}
-                unmappedFolders={unmappedFolders}
-                allSelected={allSelected}
-                allUnselected={allUnselected}
-                selectedState={selectedState}
-                contentBody={contentBody}
-                showLanguageProfile={showLanguageProfile}
-                showMetadataProfile={showMetadataProfile}
-                scrollTop={this.state.scrollTop}
-                onSelectAllChange={this.onSelectAllChange}
-                onSelectedChange={this.onSelectedChange}
-                onRemoveSelectedStateItem={this.onRemoveSelectedStateItem}
-                onScroll={this.onScroll}
-              />
-          }
         </PageContentBodyConnector>
-
-        {
-          !rootFoldersError && rootFoldersPopulated && !!unmappedFolders.length &&
-            <ImportArtistFooterConnector
-              selectedIds={this.getSelectedIds()}
-              showLanguageProfile={showLanguageProfile}
-              showMetadataProfile={showMetadataProfile}
-              onInputChange={this.onInputChange}
-              onImportPress={this.onImportPress}
-            />
-        }
       </PageContent>
     );
   }
@@ -158,20 +217,20 @@ class ImportArtist extends Component {
 
 ImportArtist.propTypes = {
   rootFolderId: PropTypes.number.isRequired,
-  path: PropTypes.string,
   rootFoldersFetching: PropTypes.bool.isRequired,
   rootFoldersPopulated: PropTypes.bool.isRequired,
   rootFoldersError: PropTypes.object,
-  unmappedFolders: PropTypes.arrayOf(PropTypes.object),
-  items: PropTypes.arrayOf(PropTypes.object),
+  isAdding: PropTypes.bool.isRequired,
+  monitor: PropTypes.object.isRequired,
+  qualityProfileId: PropTypes.object,
+  languageProfileId: PropTypes.object,
+  metadataProfileId: PropTypes.object,
+  albumFolder: PropTypes.object.isRequired,
+  tags: PropTypes.object.isRequired,
   showLanguageProfile: PropTypes.bool.isRequired,
   showMetadataProfile: PropTypes.bool.isRequired,
   onInputChange: PropTypes.func.isRequired,
   onImportPress: PropTypes.func.isRequired
-};
-
-ImportArtist.defaultProps = {
-  unmappedFolders: []
 };
 
 export default ImportArtist;

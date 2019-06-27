@@ -41,7 +41,7 @@ namespace NzbDrone.Core.Test.MediaFiles
                   .Returns<string, IEnumerable<IFileInfo>>((b, s) => s.ToList());
 
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null))
                   .Returns(new List<ImportResult>());
 
             var downloadItem = Builder<DownloadClientItem>.CreateNew()
@@ -89,7 +89,7 @@ namespace NzbDrone.Core.Test.MediaFiles
                   .Returns(imported);
 
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), It.IsAny<bool>(), It.IsAny<DownloadClientItem>(), It.IsAny<ImportMode>()))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), It.IsAny<bool>(), It.IsAny<DownloadClientItem>(), It.IsAny<ImportMode>(), null))
                   .Returns(imported.Select(i => new ImportResult(i)).ToList())
                   .Callback(() => WasImportedResponse());
         }
@@ -162,7 +162,7 @@ namespace NzbDrone.Core.Test.MediaFiles
         public void should_not_delete_folder_if_no_files_were_imported()
         {
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), false, null, ImportMode.Auto))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), false, null, ImportMode.Auto, null))
                   .Returns(new List<ImportResult>());
 
             Subject.ProcessRootFolder(DiskProvider.GetDirectoryInfo(_droneFactory));
@@ -186,7 +186,7 @@ namespace NzbDrone.Core.Test.MediaFiles
                   .Returns(imported);
 
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null))
                   .Returns(imported.Select(i => new ImportResult(i)).ToList());
 
             Subject.ProcessRootFolder(DiskProvider.GetDirectoryInfo(_droneFactory));
@@ -243,7 +243,7 @@ namespace NzbDrone.Core.Test.MediaFiles
                   .Returns(imported);
 
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null))
                   .Returns(imported.Select(i => new ImportResult(i)).ToList());
 
             GivenAudioFiles(new []{ _audioFiles.First().Replace(".ext", ".rar") }, 15.Megabytes());
@@ -283,7 +283,7 @@ namespace NzbDrone.Core.Test.MediaFiles
                   .Returns(imported);
 
             Mocker.GetMock<IImportApprovedTracks>()
-                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto))
+                  .Setup(s => s.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null))
                   .Returns(new List<ImportResult>());
 
             Subject.ProcessRootFolder(DiskProvider.GetDirectoryInfo(_droneFactory));
@@ -338,13 +338,13 @@ namespace NzbDrone.Core.Test.MediaFiles
 
         private void VerifyNoImport()
         {
-            Mocker.GetMock<IImportApprovedTracks>().Verify(c => c.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto),
+            Mocker.GetMock<IImportApprovedTracks>().Verify(c => c.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null),
                 Times.Never());
         }
 
         private void VerifyImport()
         {
-            Mocker.GetMock<IImportApprovedTracks>().Verify(c => c.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto),
+            Mocker.GetMock<IImportApprovedTracks>().Verify(c => c.Import(It.IsAny<List<ImportDecision<LocalTrack>>>(), true, null, ImportMode.Auto, null),
                 Times.Once());
         }
     }

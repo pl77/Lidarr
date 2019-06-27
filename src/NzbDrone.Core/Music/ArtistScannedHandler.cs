@@ -12,20 +12,17 @@ namespace NzbDrone.Core.Music
         private readonly IAlbumMonitoredService _albumMonitoredService;
         private readonly IArtistService _artistService;
         private readonly IManageCommandQueue _commandQueueManager;
-        //private readonly IEpisodeAddedService _episodeAddedService;
 
         private readonly Logger _logger;
 
         public ArtistScannedHandler(IAlbumMonitoredService albumMonitoredService,
                                     IArtistService artistService,
                                     IManageCommandQueue commandQueueManager,
-                                    //IEpisodeAddedService episodeAddedService,
                                     Logger logger)
         {
             _albumMonitoredService = albumMonitoredService;
             _artistService = artistService;
             _commandQueueManager = commandQueueManager;
-            //_episodeAddedService = episodeAddedService;
             _logger = logger;
         }
 
@@ -33,7 +30,6 @@ namespace NzbDrone.Core.Music
         {
             if (artist.AddOptions == null)
             {
-                //_episodeAddedService.SearchForRecentlyAdded(series.Id);
                 return;
             }
 

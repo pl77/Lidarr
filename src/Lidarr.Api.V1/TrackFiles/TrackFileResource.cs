@@ -12,7 +12,6 @@ namespace Lidarr.Api.V1.TrackFiles
     {
         public int ArtistId { get; set; }
         public int AlbumId { get; set; }
-        public string RelativePath { get; set; }
         public string Path { get; set; }
         public long Size { get; set; }
         public DateTime DateAdded { get; set; }
@@ -38,7 +37,6 @@ namespace Lidarr.Api.V1.TrackFiles
 
                 ArtistId = model.Artist.Value.Id,
                 AlbumId = model.AlbumId,
-                RelativePath = model.Artist.Value.Path.GetRelativePath(model.Path),
                 Path = model.Path,
                 Size = model.Size,
                 DateAdded = model.DateAdded,
@@ -62,7 +60,6 @@ namespace Lidarr.Api.V1.TrackFiles
                 ArtistId = artist.Id,
                 AlbumId = model.AlbumId,
                 Path = model.Path,
-                RelativePath = artist.Path.GetRelativePath(model.Path),
                 Size = model.Size,
                 DateAdded = model.DateAdded,
                 //SceneName = model.SceneName,

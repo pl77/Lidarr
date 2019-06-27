@@ -51,7 +51,9 @@ namespace NzbDrone.Core.Music
             QualityProfileId = otherArtist.QualityProfileId;
             QualityProfile = otherArtist.QualityProfile;
             LanguageProfileId = otherArtist.LanguageProfileId;
+            LanguageProfile = otherArtist.LanguageProfile;
             MetadataProfileId = otherArtist.MetadataProfileId;
+            MetadataProfile = otherArtist.MetadataProfile;
 
             Albums = otherArtist.Albums;
             Tags = otherArtist.Tags;

@@ -54,7 +54,8 @@ namespace Lidarr.Api.V1.RootFolders
 
         private List<RootFolderResource> GetRootFolders()
         {
-            return _rootFolderService.AllWithUnmappedFolders().ToResource();
+            var folders = _rootFolderService.AllWithSpaceStats().ToResource();
+            return folders;
         }
 
         private void DeleteFolder(int id)

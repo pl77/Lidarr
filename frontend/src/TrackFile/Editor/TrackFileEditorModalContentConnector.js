@@ -70,7 +70,7 @@ function createMapStateToProps() {
         const trackFile = _.find(trackFiles.items, { id: track.trackFileId });
 
         return {
-          relativePath: trackFile.relativePath,
+          path: trackFile.path,
           language: trackFile.language,
           quality: trackFile.quality,
           ...track

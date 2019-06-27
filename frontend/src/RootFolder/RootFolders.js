@@ -17,8 +17,8 @@ const rootFolderColumns = [
     isVisible: true
   },
   {
-    name: 'unmappedFolders',
-    label: 'Unmapped Folders',
+    name: 'unmappedArtists',
+    label: 'Unmapped Artists',
     isVisible: true
   },
   {
@@ -60,7 +60,7 @@ function RootFolders(props) {
                 id={rootFolder.id}
                 path={rootFolder.path}
                 freeSpace={rootFolder.freeSpace}
-                unmappedFolders={rootFolder.unmappedFolders}
+                unmappedArtists={rootFolder.unmappedArtists}
               />
             );
           })

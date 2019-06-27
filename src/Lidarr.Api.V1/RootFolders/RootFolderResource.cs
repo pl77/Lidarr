@@ -10,8 +10,6 @@ namespace Lidarr.Api.V1.RootFolders
         public string Path { get; set; }
         public long? FreeSpace { get; set; }
         public long? TotalSpace { get; set; }
-
-        public List<UnmappedFolder> UnmappedFolders { get; set; }
     }
 
     public static class RootFolderResourceMapper
@@ -27,7 +25,6 @@ namespace Lidarr.Api.V1.RootFolders
                 Path = model.Path,
                 FreeSpace = model.FreeSpace,
                 TotalSpace = model.TotalSpace,
-                UnmappedFolders = model.UnmappedFolders
             };
         }
 
@@ -38,10 +35,7 @@ namespace Lidarr.Api.V1.RootFolders
             return new RootFolder
             {
                 Id = resource.Id,
-
-                Path = resource.Path,
-                //FreeSpace
-                //UnmappedFolders
+                Path = resource.Path
             };
         }
 
