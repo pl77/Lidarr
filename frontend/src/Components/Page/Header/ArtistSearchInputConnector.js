@@ -52,7 +52,7 @@ function createMapDispatchToProps(dispatch, props) {
     },
 
     onGoToAddNewArtist(query) {
-      dispatch(push(`${window.Lidarr.urlBase}/add/new?term=${encodeURIComponent(query)}`));
+      dispatch(push(`${window.Lidarr.urlBase}/add/artist?term=${encodeURIComponent(query)}`));
     }
   };
 }

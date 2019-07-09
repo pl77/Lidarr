@@ -874,6 +874,8 @@
     <Compile Include="Music\Member.cs" />
     <Compile Include="Music\AddArtistOptions.cs" />
     <Compile Include="Music\AddArtistService.cs" />
+    <Compile Include="Music\AddAlbumOptions.cs" />
+    <Compile Include="Music\AddAlbumService.cs" />
     <Compile Include="Music\AddArtistValidator.cs" />
     <Compile Include="Music\Album.cs" />
     <Compile Include="Music\Artist.cs" />

@@ -12,10 +12,13 @@ namespace NzbDrone.Core.ImportLists.Exclusions
         void Delete(int id);
         ImportListExclusion Get(int id);
         ImportListExclusion FindByForeignId(string foreignId);
+        List<ImportListExclusion> FindByForeignId(List<string> foreignId);
         ImportListExclusion Update(ImportListExclusion importListExclusion);
     }
 
-    public class ImportListExclusionService : IImportListExclusionService, IHandleAsync<ArtistDeletedEvent>
+    public class ImportListExclusionService : IImportListExclusionService,
+                                              IHandleAsync<ArtistDeletedEvent>,
+                                              IHandleAsync<AlbumDeletedEvent>
     {
         private readonly IImportListExclusionRepository _repo;
 
@@ -49,6 +52,11 @@ namespace NzbDrone.Core.ImportLists.Exclusions
             return _repo.FindByForeignId(foreignId);
         }
 
+        public List<ImportListExclusion> FindByForeignId(List<string> ids)
+        {
+            return _repo.FindByForeignId(ids);
+        }
+
         public List<ImportListExclusion> All()
         {
             return _repo.All().ToList();
@@ -72,6 +80,29 @@ namespace NzbDrone.Core.ImportLists.Exclusions
             {
                 ForeignId = message.Artist.ForeignArtistId,
                 Name = message.Artist.Name
+            };
+
+            _repo.Insert(importExclusion);
+        }
+
+        public void HandleAsync(AlbumDeletedEvent message)
+        {
+            if (!message.AddImportListExclusion)
+            {
+                return;
+            }
+
+            var existingExclusion = _repo.FindByForeignId(message.Album.ForeignAlbumId);
+
+            if (existingExclusion != null)
+            {
+                return;
+            }
+
+            var importExclusion = new ImportListExclusion
+            {
+                ForeignId = message.Album.ForeignAlbumId,
+                Name = $"{message.Album.ArtistMetadata.Value.Name} - {message.Album.Title}"
             };
 
             _repo.Insert(importExclusion);

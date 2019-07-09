@@ -1,3 +1,4 @@
+import * as addAlbum from './addAlbumActions';
 import * as addArtist from './addArtistActions';
 import * as app from './appActions';
 import * as blacklist from './blacklistActions';
@@ -31,6 +32,7 @@ import * as tracks from './trackActions';
 import * as wanted from './wantedActions';
 
 export default [
+  addAlbum,
   addArtist,
   app,
   blacklist,

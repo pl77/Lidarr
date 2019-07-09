@@ -56,6 +56,7 @@ export default function createHandleActions(handlers, defaultState, section) {
       const {
         section: payloadSection,
         updateOnly = false,
+        idField,
         ...otherProps
       } = payload;
 
@@ -64,7 +65,7 @@ export default function createHandleActions(handlers, defaultState, section) {
       if (section === baseSection) {
         const newState = getSectionState(state, payloadSection);
         const items = newState.items;
-        const index = _.findIndex(items, { id: payload.id });
+        const index = _.findIndex(items, { [idField || 'id']: payload[idField || 'id'] });
 
         newState.items = [...items];
 

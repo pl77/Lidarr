@@ -180,6 +180,7 @@ class AddNewArtistSearchResult extends Component {
           isOpen={isNewAddArtistModalOpen && !isExistingArtist}
           foreignArtistId={foreignArtistId}
           artistName={artistName}
+          disambiguation={disambiguation}
           year={year}
           overview={overview}
           images={images}

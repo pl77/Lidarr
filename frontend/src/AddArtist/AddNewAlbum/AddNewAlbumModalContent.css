@@ -2,11 +2,6 @@
   display: flex;
 }
 
-.year {
-  margin-left: 5px;
-  color: $disabledColor;
-}
-
 .poster {
   flex: 0 0 170px;
   margin-right: 20px;
@@ -20,6 +15,12 @@
 .name {
   font-weight: 300;
   font-size: 36px;
+}
+
+.artistName {
+  margin-bottom: 20px;
+  font-weight: 300;
+  font-size: 20px;
 }
 
 .disambiguation {
@@ -39,23 +40,70 @@
   margin-left: 8px;
 }
 
-.searchForMissingAlbumsLabelContainer {
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  width: 100%;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  flex: 0 1 300px;
+}
+
+.albumType {
+  margin-bottom: 20px;
+  border: 1px solid $borderColor;
+  border-radius: 4px;
+  background-color: $white;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.albumTypeLabel {
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+.albumCount {
+  color: #8895aa;
+  font-style: italic;
+  font-size: 18px;
+}
+
+.expandButton {
+  composes: link from '~Components/Link/Link.css';
+
+  flex-grow: 1;
+  width: 100%;
+  text-align: center;
+}
+
+.searchForNewAlbumLabelContainer {
   display: flex;
   margin-top: 2px;
 }
 
-.searchForMissingAlbumsLabel {
+.searchForNewAlbumLabel {
   margin-right: 8px;
   font-weight: normal;
 }
 
-.searchForMissingAlbumsContainer {
+.searchForNewAlbumContainer {
   composes: container from '~Components/Form/CheckInput.css';
 
   flex: 0 1 0;
 }
 
-.searchForMissingAlbumsInput {
+.searchForNewAlbumInput {
   composes: input from '~Components/Form/CheckInput.css';
 
   margin-top: 0;

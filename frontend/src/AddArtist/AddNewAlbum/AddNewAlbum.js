@@ -8,10 +8,10 @@ import LoadingIndicator from 'Components/Loading/LoadingIndicator';
 import TextInput from 'Components/Form/TextInput';
 import PageContent from 'Components/Page/PageContent';
 import PageContentBodyConnector from 'Components/Page/PageContentBodyConnector';
-import AddNewArtistSearchResultConnector from './AddNewArtistSearchResultConnector';
-import styles from './AddNewArtist.css';
+import AddNewAlbumSearchResultConnector from './AddNewAlbumSearchResultConnector';
+import styles from './AddNewAlbum.css';
 
-class AddNewArtist extends Component {
+class AddNewAlbum extends Component {
 
   //
   // Lifecycle
@@ -29,7 +29,7 @@ class AddNewArtist extends Component {
     const term = this.state.term;
 
     if (term) {
-      this.props.onArtistLookupChange(term);
+      this.props.onAlbumLookupChange(term);
     }
   }
 
@@ -44,7 +44,7 @@ class AddNewArtist extends Component {
         term,
         isFetching: true
       });
-      this.props.onArtistLookupChange(term);
+      this.props.onAlbumLookupChange(term);
     } else if (isFetching !== prevProps.isFetching) {
       this.setState({
         isFetching
@@ -60,16 +60,16 @@ class AddNewArtist extends Component {
 
     this.setState({ term: value, isFetching: hasValue }, () => {
       if (hasValue) {
-        this.props.onArtistLookupChange(value);
+        this.props.onAlbumLookupChange(value);
       } else {
-        this.props.onClearArtistLookup();
+        this.props.onClearAlbumLookup();
       }
     });
   }
 
-  onClearArtistLookupPress = () => {
+  onClearAlbumLookupPress = () => {
     this.setState({ term: '' });
-    this.props.onClearArtistLookup();
+    this.props.onClearAlbumLookup();
   }
 
   //
@@ -85,7 +85,7 @@ class AddNewArtist extends Component {
     const isFetching = this.state.isFetching;
 
     return (
-      <PageContent title="Add New Artist">
+      <PageContent title="Add New Album">
         <PageContentBodyConnector>
           <div className={styles.searchContainer}>
             <div className={styles.searchIconContainer}>
@@ -97,16 +97,16 @@ class AddNewArtist extends Component {
 
             <TextInput
               className={styles.searchInput}
-              name="artistLookup"
+              name="albumLookup"
               value={term}
-              placeholder="eg. Breaking Benjamin, lidarr:854a1807-025b-42a8-ba8c-2a39717f1d25"
+              placeholder="eg. We Are Not Alone, lidarr:9a03d313-0580-3f71-ae10-0e0996db3faa"
               autoFocus={true}
               onChange={this.onSearchInputChange}
             />
 
             <Button
               className={styles.clearLookupButton}
-              onPress={this.onClearArtistLookupPress}
+              onPress={this.onClearAlbumLookupPress}
             >
               <Icon
                 name={icons.REMOVE}
@@ -131,8 +131,10 @@ class AddNewArtist extends Component {
                 {
                   items.map((item) => {
                     return (
-                      <AddNewArtistSearchResultConnector
-                        key={item.foreignArtistId}
+                      <AddNewAlbumSearchResultConnector
+                        isExistingAlbum={'id' in item && item.id !== 0}
+                        isExistingArtist={'id' in item.artist && item.artist.id !== 0}
+                        key={item.foreignAlbumId}
                         {...item}
                       />
                     );
@@ -145,15 +147,15 @@ class AddNewArtist extends Component {
             !isFetching && !error && !items.length && !!term &&
               <div className={styles.message}>
                 <div className={styles.noResults}>Couldn't find any results for '{term}'</div>
-                <div>You can also search using the <Link to="https://musicbrainz.org/search">MusicBrainz ID</Link> of an artist e.g. lidarr:cc197bad-dc9c-440d-a5b5-d52ba2e14234</div>
+                <div>You can also search using <Link to="https://musicbrainz.org/search?type=release_group">MusicBrainz ID</Link> of a release group e.g. lidarr:9a03d313-0580-3f71-ae10-0e0996db3faa</div>
               </div>
           }
 
           {
             !term &&
               <div className={styles.message}>
-                <div className={styles.helpText}>It's easy to add a new artist, just start typing the name of the artist you want to add.</div>
-                <div>You can also search using the <Link to="https://musicbrainz.org/search">MusicBrainz ID</Link> of an artist e.g. lidarr:cc197bad-dc9c-440d-a5b5-d52ba2e14234</div>
+                <div className={styles.helpText}>It's easy to add a new album, just start typing the name of the album you want to add.</div>
+                <div>You can also search using <Link to="https://musicbrainz.org/search?type=release_group">MusicBrainz ID</Link> of a release group e.g. lidarr:9a03d313-0580-3f71-ae10-0e0996db3faa</div>
               </div>
           }
 
@@ -164,15 +166,15 @@ class AddNewArtist extends Component {
   }
 }
 
-AddNewArtist.propTypes = {
+AddNewAlbum.propTypes = {
   term: PropTypes.string,
   isFetching: PropTypes.bool.isRequired,
   error: PropTypes.object,
   isAdding: PropTypes.bool.isRequired,
   addError: PropTypes.object,
   items: PropTypes.arrayOf(PropTypes.object).isRequired,
-  onArtistLookupChange: PropTypes.func.isRequired,
-  onClearArtistLookup: PropTypes.func.isRequired
+  onAlbumLookupChange: PropTypes.func.isRequired,
+  onClearAlbumLookup: PropTypes.func.isRequired
 };
 
-export default AddNewArtist;
+export default AddNewAlbum;
