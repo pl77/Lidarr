@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.IO;
+using System.IO.Abstractions;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
@@ -122,6 +123,21 @@ namespace NzbDrone.Common.Test.DiskTests
         }
 
         [Test]
+        public void should_be_able_to_delete_nested_empty_subdirs()
+        {
+            var artistDir = Path.Combine(GetTempFilePath(), "Artist");
+            var albumDir = Path.Combine(artistDir, "Album");
+
+            Directory.CreateDirectory(Path.Combine(albumDir));
+            Directory.CreateDirectory(Path.Combine(albumDir, "Album"));
+            Directory.CreateDirectory(Path.Combine(albumDir, "Album", "CD1"));
+            Directory.CreateDirectory(Path.Combine(albumDir, "Album", "CD2"));
+
+            Subject.RemoveEmptySubfolders(artistDir);
+            Directory.Exists(albumDir).Should().BeFalse();
+        }
+
+        [Test]
         public void empty_folder_should_return_folder_modified_date()
         {
             var tempfolder = new DirectoryInfo(TempFolder);
@@ -202,7 +218,7 @@ namespace NzbDrone.Common.Test.DiskTests
         [Test]
         public void GetParentFolder_should_remove_trailing_slash_before_getting_parent_folder()
         {
-            var path = @"C:\Test\TV\".AsOsAgnostic();
+            var path = @"C:\Test\Music\".AsOsAgnostic();
             var parent = @"C:\Test".AsOsAgnostic();
 
             Subject.GetParentFolder(path).Should().Be(parent);
@@ -244,14 +260,20 @@ namespace NzbDrone.Common.Test.DiskTests
         }
 
         [Test]
+        [Ignore("No longer behaving this way in a Windows 10 Feature Update")]
         public void should_not_be_able_to_rename_open_hardlinks_with_fileshare_none()
         {
+            WindowsOnly();
+
             Assert.Throws<IOException>(() => DoHardLinkRename(FileShare.None));
         }
 
         [Test]
+        [Ignore("No longer behaving this way in a Windows 10 Feature Update")]
         public void should_not_be_able_to_rename_open_hardlinks_with_fileshare_write()
         {
+            WindowsOnly();
+
             Assert.Throws<IOException>(() => DoHardLinkRename(FileShare.Read));
         }
     }

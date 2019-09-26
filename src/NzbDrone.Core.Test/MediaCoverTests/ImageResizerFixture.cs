@@ -1,27 +1,25 @@
-﻿using System;
+using System;
 using System.IO;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
-using NzbDrone.Core.MediaCover;
+using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Core.Test.Framework;
+using SixLabors.ImageSharp;
 
 namespace NzbDrone.Core.Test.MediaCoverTests
 {
     [TestFixture]
-    public class ImageResizerFixture : CoreTest<ImageResizer>
+    public class ImageResizerFixture : CoreTest<MediaCover.ImageResizer>
     {
         [SetUp]
         public void SetUp()
         {
-            Mocker.GetMock<IDiskProvider>()
-                  .Setup(v => v.OpenReadStream(It.IsAny<string>()))
-                  .Returns<string>(s => new FileStream(s, FileMode.Open));
-
-            Mocker.GetMock<IDiskProvider>()
-                  .Setup(v => v.OpenWriteStream(It.IsAny<string>()))
-                  .Returns<string>(s => new FileStream(s, FileMode.Create));
+            if (PlatformInfo.IsMono && PlatformInfo.GetVersion() < new Version(5, 8))
+            {
+                Assert.Inconclusive("Not supported on Mono < 5.8");
+            }
 
             Mocker.GetMock<IDiskProvider>()
                   .Setup(v => v.FileExists(It.IsAny<string>()))
@@ -30,6 +28,8 @@ namespace NzbDrone.Core.Test.MediaCoverTests
             Mocker.GetMock<IDiskProvider>()
                   .Setup(v => v.DeleteFile(It.IsAny<string>()))
                   .Callback<string>(s => File.Delete(s));
+
+            Mocker.SetConstant<IPlatformInfo>(Mocker.Resolve<PlatformInfo>());
         }
 
         [Test]
@@ -46,9 +46,11 @@ namespace NzbDrone.Core.Test.MediaCoverTests
             fileInfo.Exists.Should().BeTrue();
             fileInfo.Length.Should().BeInRange(1000, 30000);
 
-            var image = System.Drawing.Image.FromFile(resizedFile);
-            image.Height.Should().Be(170);
-            image.Width.Should().Be(170);
+            using (var image = Image.Load(resizedFile))
+            {
+                image.Height.Should().Be(170);
+                image.Width.Should().Be(170);
+            }
         }
 
         [Test]
