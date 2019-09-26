@@ -5,11 +5,12 @@ namespace Lidarr.Api.V1.ImportLists
     public class ImportListResource : ProviderResource
     {
         public bool EnableAutomaticAdd { get; set; }
-        public bool ShouldMonitor { get; set; }
+        public ImportListMonitorType ShouldMonitor { get; set; }
         public string RootFolderPath { get; set; }
         public int QualityProfileId { get; set; }
-        public int LanguageProfileId { get; set; }
         public int MetadataProfileId { get; set; }
+        public ImportListType ListType { get; set; }
+        public int ListOrder { get; set; }
     }
 
     public class ImportListResourceMapper : ProviderResourceMapper<ImportListResource, ImportListDefinition>
@@ -27,8 +28,9 @@ namespace Lidarr.Api.V1.ImportLists
             resource.ShouldMonitor = definition.ShouldMonitor;
             resource.RootFolderPath = definition.RootFolderPath;
             resource.QualityProfileId = definition.ProfileId;
-            resource.LanguageProfileId = definition.LanguageProfileId;
             resource.MetadataProfileId = definition.MetadataProfileId;
+            resource.ListType = definition.ListType;
+            resource.ListOrder = (int) definition.ListType;
 
             return resource;
         }
@@ -46,8 +48,8 @@ namespace Lidarr.Api.V1.ImportLists
             definition.ShouldMonitor = resource.ShouldMonitor;
             definition.RootFolderPath = resource.RootFolderPath;
             definition.ProfileId = resource.QualityProfileId;
-            definition.LanguageProfileId = resource.LanguageProfileId;
             definition.MetadataProfileId = resource.MetadataProfileId;
+            definition.ListType = resource.ListType;
 
             return definition;
         }

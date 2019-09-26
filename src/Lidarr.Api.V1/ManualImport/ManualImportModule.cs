@@ -33,11 +33,11 @@ namespace Lidarr.Api.V1.ManualImport
 
             GetResourceAll = GetMediaFiles;
             
-            Put["/"] = options =>
+            Put("/", options =>
                 {
                     var resource = Request.Body.FromJson<List<ManualImportResource>>();
-                    return UpdateImportItems(resource).AsResponse(HttpStatusCode.Accepted);
-                };
+                    return ResponseWithCode(UpdateImportItems(resource), HttpStatusCode.Accepted);
+                });
         }
 
         private List<ManualImportResource> GetMediaFiles()
@@ -71,14 +71,12 @@ namespace Lidarr.Api.V1.ManualImport
                         Id = resource.Id,
                         Path = resource.Path,
                         RelativePath = resource.RelativePath,
-                        FolderName = resource.FolderName,
                         Name = resource.Name,
                         Size = resource.Size,
                         Artist = resource.Artist == null ? null : _artistService.GetArtist(resource.Artist.Id),
                         Album = resource.Album == null ? null : _albumService.GetAlbum(resource.Album.Id),
                         Release = resource.AlbumReleaseId == 0 ? null : _releaseService.GetRelease(resource.AlbumReleaseId),
                         Quality = resource.Quality,
-                        Language = resource.Language,
                         DownloadId = resource.DownloadId,
                         AdditionalFile = resource.AdditionalFile,
                         ReplaceExistingFiles = resource.ReplaceExistingFiles,

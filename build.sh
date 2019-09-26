@@ -5,7 +5,6 @@ outputFolderLinux='./_output_linux'
 outputFolderMacOS='./_output_macos'
 outputFolderMacOSApp='./_output_macos_app'
 testPackageFolder='./_tests/'
-testSearchPattern='*.Test/bin/x86/Release/*'
 sourceFolder='./src'
 slnFile=$sourceFolder/Lidarr.sln
 updateFolder=$outputFolder/Lidarr.Update
@@ -40,6 +39,16 @@ ProgressStart()
 ProgressEnd()
 {
     echo "Finish '$1'"
+}
+
+UpdateVersionNumber()
+{
+    if [ "$LIDARRVERSION" != "" ]; then
+        echo "Updating Version Info"
+        sed -i "s/<AssemblyVersion>[0-9.*]\+<\/AssemblyVersion>/<AssemblyVersion>$LIDARRVERSION<\/AssemblyVersion>/g" ./src/Directory.Build.props
+        sed -i "s/<AssemblyConfiguration>[\$()A-Za-z-]\+<\/AssemblyConfiguration>/<AssemblyConfiguration>${BUILD_SOURCEBRANCHNAME}<\/AssemblyConfiguration>/g" ./src/Directory.Build.props
+        sed -i "s/<string>10.0.0.0<\/string>/<string>$LIDARRVERSION<\/string>/g" ./macOS/Lidarr.app/Contents/Info.plist
+    fi
 }
 
 CleanFolder()
@@ -96,7 +105,7 @@ BuildWithXbuild()
 LintUI()
 {
     ProgressStart 'ESLint'
-    CheckExitCode yarn eslint
+    CheckExitCode yarn lint
     ProgressEnd 'ESLint'
 
     ProgressStart 'Stylelint'
@@ -113,6 +122,7 @@ Build()
     ProgressStart 'Build'
 
     rm -rf $outputFolder
+    rm -rf $testPackageFolder
 
     if [ $runtime = "dotnet" ] ; then
         BuildWithMSBuild
@@ -131,38 +141,19 @@ Build()
     ProgressEnd 'Build'
 }
 
-RunGulp()
+YarnInstall()
 {
     ProgressStart 'yarn install'
     yarn install
     #npm-cache install npm || CheckExitCode npm install --no-optional --no-bin-links
     ProgressEnd 'yarn install'
+}
 
-    LintUI
-
+RunGulp()
+{
     ProgressStart 'Running gulp'
     CheckExitCode yarn run build --production
     ProgressEnd 'Running gulp'
-}
-
-CreateMdbs()
-{
-    local path=$1
-    if [ $runtime = "dotnet" ] ; then
-        local pdbFiles=( $(find $path -name "*.pdb") )
-        for filename in "${pdbFiles[@]}"
-        do
-          if [ -e ${filename%.pdb}.dll ]  ; then
-            tools/pdb2mdb/pdb2mdb.exe ${filename%.pdb}.dll
-          fi
-          if [ -e ${filename%.pdb}.exe ]  ; then
-            tools/pdb2mdb/pdb2mdb.exe ${filename%.pdb}.exe
-          fi
-        done
-
-        echo "Removing PDBs"
-        find $path -name "*.pdb" -exec rm "{}" \;
-    fi
 }
 
 PackageMono()
@@ -174,8 +165,8 @@ PackageMono()
     echo "Copying Binaries"
     cp -r $outputFolder $outputFolderLinux
 
-    echo "Creating MDBs"
-    CreateMdbs $outputFolderLinux
+    echo "Replacing System.Numerics.Vectors.dll"
+    cp $sourceFolder/Libraries/Mono/System.Numerics.Vectors.dll $outputFolderLinux
 
     echo "Removing Service helpers"
     rm -f $outputFolderLinux/ServiceUninstall.*
@@ -184,9 +175,6 @@ PackageMono()
     echo "Removing native windows binaries Sqlite, fpcalc"
     rm -f $outputFolderLinux/sqlite3.*
     rm -f $outputFolderLinux/fpcalc*
-
-    echo "Adding CurlSharp.dll.config (for dllmap)"
-    cp $sourceFolder/NzbDrone.Common/CurlSharp.dll.config $outputFolderLinux
 
     echo "Renaming Lidarr.Console.exe to Lidarr.exe"
     rm $outputFolderLinux/Lidarr.exe*
@@ -212,7 +200,6 @@ PackageMacOS()
 
     echo "Adding Startup script"
     cp ./macOS/Lidarr $outputFolderMacOS
-    dos2unix $outputFolderMacOS/Lidarr
 
     echo "Copying Binaries"
     cp -r $outputFolderLinux/* $outputFolderMacOS
@@ -254,37 +241,20 @@ PackageTests()
 {
     ProgressStart 'Creating Test Package'
 
-    rm -rf $testPackageFolder
-    mkdir $testPackageFolder
-
-    find . -maxdepth 6 -path $testSearchPattern -exec cp -r "{}" $testPackageFolder \;
-
     if [ $runtime = "dotnet" ] ; then
-        $nuget install NUnit.ConsoleRunner -Version 3.7.0 -Output $testPackageFolder
+        $nuget install NUnit.ConsoleRunner -Version 3.10.0 -Output $testPackageFolder
     else
-        mono $nuget install NUnit.ConsoleRunner -Version 3.7.0 -Output $testPackageFolder
+        mono $nuget install NUnit.ConsoleRunner -Version 3.10.0 -Output $testPackageFolder
     fi
 
-    cp $outputFolder/*.dll $testPackageFolder
-    cp $outputFolder/*.exe $testPackageFolder
-    cp $outputFolder/fpcalc $testPackageFolder
-    cp ./*.sh $testPackageFolder
-
-    echo "Creating MDBs for tests"
-    CreateMdbs $testPackageFolder
+    cp ./test.sh $testPackageFolder
 
     rm -f $testPackageFolder/*.log.config
 
     CleanFolder $testPackageFolder true
 
-    echo "Adding CurlSharp.dll.config (for dllmap)"
-    cp $sourceFolder/NzbDrone.Common/CurlSharp.dll.config $testPackageFolder
-
-    echo "Copying CurlSharp libraries"
-    cp $sourceFolder/ExternalModules/CurlSharp/libs/i386/* $testPackageFolder
-
-    echo "Copying dylibs"
-    cp -r $outputFolderMacOS/*.dylib $testPackageFolder
+    echo "Adding sqlite dylibs"
+    cp $sourceFolder/Libraries/Sqlite/*.dylib $testPackageFolder
 
     ProgressEnd 'Creating Test Package'
 }
@@ -338,11 +308,81 @@ case "$(uname -s)" in
         ;;
 esac
 
-Build
-RunGulp
-PackageMono
-PackageMacOS
-PackageMacOSApp
-PackageTests
-CleanupWindowsPackage
-PackageArtifacts
+POSITIONAL=()
+
+if [ $# -eq 0 ]; then
+    echo "No arguments provided, building everything"
+    BACKEND=YES
+    FRONTEND=YES
+    PACKAGES=YES
+    LINT=YES
+fi
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    --backend)
+        BACKEND=YES
+        shift # past argument
+        ;;
+    --frontend)
+        FRONTEND=YES
+        shift # past argument
+        ;;
+    --packages)
+        PACKAGES=YES
+        shift # past argument
+        ;;
+    --lint)
+        LINT=YES
+        shift # past argument
+        ;;
+    --all)
+        BACKEND=YES
+        FRONTEND=YES
+        PACKAGES=YES
+        LINT=YES
+        shift # past argument
+        ;;
+    *)    # unknown option
+        POSITIONAL+=("$1") # save it in an array for later
+        shift # past argument
+        ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ "$BACKEND" == "YES" ];
+then
+    UpdateVersionNumber
+    Build
+    PackageTests
+fi
+
+if [ "$FRONTEND" == "YES" ];
+then
+    YarnInstall
+    RunGulp
+fi
+
+if [ "$LINT" == "YES" ];
+then
+    if [ -z "$FRONTEND" ];
+    then
+        YarnInstall
+    fi
+    
+    LintUI
+fi
+
+if [ "$PACKAGES" == "YES" ];
+then
+    UpdateVersionNumber
+    PackageMono
+    PackageMacOS
+    PackageMacOSApp
+    CleanupWindowsPackage
+    PackageArtifacts
+fi

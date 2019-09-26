@@ -3,41 +3,31 @@ using Nancy;
 using Nancy.Authentication.Forms;
 using Nancy.Extensions;
 using Nancy.ModelBinding;
-using NzbDrone.Common.EnsureThat;
-using NzbDrone.Common.Extensions;
-using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
 
 namespace Lidarr.Http.Authentication
 {
     public class AuthenticationModule : NancyModule
     {
-        private readonly IUserService _userService;
+        private readonly IAuthenticationService _authService;
         private readonly IConfigFileProvider _configFileProvider;
 
-        public AuthenticationModule(IUserService userService, IConfigFileProvider configFileProvider)
+        public AuthenticationModule(IAuthenticationService authService, IConfigFileProvider configFileProvider)
         {
-            _userService = userService;
+            _authService = authService;
             _configFileProvider = configFileProvider;
-            Post["/login"] = x => Login(this.Bind<LoginResource>());
-            Get["/logout"] = x => Logout();
+            Post("/login", x => Login(this.Bind<LoginResource>()));
+            Get("/logout", x => Logout());
         }
 
         private Response Login(LoginResource resource)
         {
-            var username = resource.Username;
-            var password = resource.Password;
-
-            if (username.IsNullOrWhiteSpace() || password.IsNullOrWhiteSpace())
-            {
-                return LoginFailed();
-            }
-
-            var user = _userService.FindUser(username, password);
+            var user = _authService.Login(Context, resource.Username, resource.Password);
 
             if (user == null)
             {
-                return LoginFailed();
+                var returnUrl = (string)Request.Query.returnUrl;
+                return Context.GetRedirect($"~/login?returnUrl={returnUrl}&loginFailed=true");
             }
 
             DateTime? expiry = null;
@@ -52,13 +42,9 @@ namespace Lidarr.Http.Authentication
 
         private Response Logout()
         {
-            return this.LogoutAndRedirect(_configFileProvider.UrlBase + "/");
-        }
+            _authService.Logout(Context);
 
-        private Response LoginFailed()
-        {
-            var returnUrl = (string)Request.Query.returnUrl;
-            return Context.GetRedirect($"~/login?returnUrl={returnUrl}&loginFailed=true");
+            return this.LogoutAndRedirect(_configFileProvider.UrlBase + "/");
         }
     }
 }

@@ -6,10 +6,10 @@
 #define AppURL "https://lidarr.audio/"
 #define ForumsURL "https://forums.lidarr.audio/"
 #define AppExeName "Lidarr.exe"
-#define BaseVersion "0.6.2"
-#define BuildNumber GetEnv('APPVEYOR_BUILD_NUMBER')
-#define BuildVersion GetEnv('APPVEYOR_BUILD_VERSION')
-#define BranchName GetEnv('APPVEYOR_REPO_BRANCH')
+#define BaseVersion GetEnv('MAJORVERSION')
+#define BuildNumber GetEnv('MINORVERSION')
+#define BuildVersion GetEnv('LIDARRVERSION')
+#define BranchName GetEnv('BUILD_SOURCEBRANCHNAME')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -36,14 +36,15 @@ CompressionThreads=2
 Compression=lzma2/normal
 AppContact={#ForumsURL}
 VersionInfoVersion={#BaseVersion}.{#BuildNumber}
+SetupLogging=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"
-Name: "windowsService"; Description: "Install Windows Service (Starts when the computer starts)"; GroupDescription: "Start automatically"; Flags: exclusive
-Name: "startupShortcut"; Description: "Create shortcut in Startup folder (Starts when you log into Windows)"; GroupDescription: "Start automatically"; Flags: exclusive unchecked
+Name: "windowsService"; Description: "Install Windows Service (Starts when the computer starts)"; GroupDescription: "Start automatically"; Flags: exclusive unchecked
+Name: "startupShortcut"; Description: "Create shortcut in Startup folder (Starts when you log into Windows)"; GroupDescription: "Start automatically"; Flags: exclusive
 Name: "none"; Description: "Do not start automatically"; GroupDescription: "Start automatically"; Flags: exclusive unchecked
 
 [Files]

@@ -1,6 +1,7 @@
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaFiles;
 using Lidarr.Http.REST;
+using NzbDrone.Core.Qualities;
 
 namespace Lidarr.Api.V1.Config
 {
@@ -8,7 +9,8 @@ namespace Lidarr.Api.V1.Config
     {
         public bool AutoUnmonitorPreviouslyDownloadedTracks { get; set; }
         public string RecycleBin { get; set; }
-        public bool AutoDownloadPropers { get; set; }
+        public int RecycleBinCleanupDays { get; set; }
+        public ProperDownloadTypes DownloadPropersAndRepacks { get; set; }
         public bool CreateEmptyArtistFolders { get; set; }
         public bool DeleteEmptyFolders { get; set; }
         public FileDateType FileDate { get; set; }
@@ -22,6 +24,7 @@ namespace Lidarr.Api.V1.Config
         public string ChownGroup { get; set; }
 
         public bool SkipFreeSpaceCheckWhenImporting { get; set; }
+        public int MinimumFreeSpaceWhenImporting { get; set; }
         public bool CopyUsingHardlinks { get; set; }
         public bool ImportExtraFiles { get; set; }
         public string ExtraFileExtensions { get; set; }
@@ -35,7 +38,8 @@ namespace Lidarr.Api.V1.Config
             {
                 AutoUnmonitorPreviouslyDownloadedTracks = model.AutoUnmonitorPreviouslyDownloadedTracks,
                 RecycleBin = model.RecycleBin,
-                AutoDownloadPropers = model.AutoDownloadPropers,
+                RecycleBinCleanupDays = model.RecycleBinCleanupDays,
+                DownloadPropersAndRepacks = model.DownloadPropersAndRepacks,
                 CreateEmptyArtistFolders = model.CreateEmptyArtistFolders,
                 DeleteEmptyFolders = model.DeleteEmptyFolders,
                 FileDate = model.FileDate,
@@ -49,6 +53,7 @@ namespace Lidarr.Api.V1.Config
                 ChownGroup = model.ChownGroup,
 
                 SkipFreeSpaceCheckWhenImporting = model.SkipFreeSpaceCheckWhenImporting,
+                MinimumFreeSpaceWhenImporting = model.MinimumFreeSpaceWhenImporting,
                 CopyUsingHardlinks = model.CopyUsingHardlinks,
                 ImportExtraFiles = model.ImportExtraFiles,
                 ExtraFileExtensions = model.ExtraFileExtensions,

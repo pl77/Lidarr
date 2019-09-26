@@ -157,22 +157,19 @@ namespace NzbDrone.Core.MediaFiles
                 return;
             }
 
-            _logger.Info("Removing items older than 7 days from the recycling bin");
+            var cleanupDays = _configService.RecycleBinCleanupDays;
 
-            foreach (var folder in _diskProvider.GetDirectories(_configService.RecycleBin))
+            if (cleanupDays == 0)
             {
-                if (_diskProvider.FolderGetLastWrite(folder).AddDays(7) > DateTime.UtcNow)
-                {
-                    _logger.Debug("Folder hasn't expired yet, skipping: {0}", folder);
-                    continue;
-                }
-
-                _diskProvider.DeleteFolder(folder, true);
+                _logger.Info("Automatic cleanup of Recycle Bin is disabled");
+                return;
             }
 
-            foreach (var file in _diskProvider.GetFiles(_configService.RecycleBin, SearchOption.TopDirectoryOnly))
+            _logger.Info("Removing items older than {0} days from the recycling bin", cleanupDays);
+
+            foreach (var file in _diskProvider.GetFiles(_configService.RecycleBin, SearchOption.AllDirectories))
             {
-                if (_diskProvider.FileGetLastWrite(file).AddDays(7) > DateTime.UtcNow)
+                if (_diskProvider.FileGetLastWrite(file).AddDays(cleanupDays) > DateTime.UtcNow)
                 {
                     _logger.Debug("File hasn't expired yet, skipping: {0}", file);
                     continue;
@@ -180,6 +177,8 @@ namespace NzbDrone.Core.MediaFiles
 
                 _diskProvider.DeleteFile(file);
             }
+
+            _diskProvider.RemoveEmptySubfolders(_configService.RecycleBin);
 
             _logger.Debug("Recycling Bin has been cleaned up.");
         }
@@ -192,6 +191,9 @@ namespace NzbDrone.Core.MediaFiles
                 _diskProvider.FileSetLastWriteTime(file, dateTime);
             }
             catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
             {
             }
         }

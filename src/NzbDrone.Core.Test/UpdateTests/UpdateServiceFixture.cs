@@ -35,9 +35,9 @@ namespace NzbDrone.Core.Test.UpdateTests
             {
                 _updatePackage = new UpdatePackage
                 {
-                    FileName = "Lidarr.develop.0.2.0.195.tar.gz",
-                    Url = "https://ci.appveyor.com/api/buildjobs/5fk7if5wjlb8twhv/artifacts/_artifacts/Lidarr.develop.0.2.0.195.linux.tar.gz",
-                    Version = new Version("0.2.0.195")
+                    FileName = "Lidarr.develop.0.6.2.883.tar.gz",
+                    Url = "https://github.com/lidarr/Lidarr/releases/download/v0.6.2.883/Lidarr.develop.0.6.2.883.linux.tar.gz",
+                    Version = new Version("0.6.2.883")
                 };
             }
 
@@ -45,9 +45,9 @@ namespace NzbDrone.Core.Test.UpdateTests
             {
                 _updatePackage = new UpdatePackage
                 {
-                    FileName = "Lidarr.develop.0.2.0.195.zip",
-                    Url = "https://ci.appveyor.com/api/buildjobs/5fk7if5wjlb8twhv/artifacts/_artifacts/Lidarr.develop.0.2.0.195.windows.zip",
-                    Version = new Version("0.2.0.195")
+                    FileName = "Lidarr.develop.0.6.2.883.zip",
+                    Url = "https://github.com/lidarr/Lidarr/releases/download/v0.6.2.883/Lidarr.develop.0.6.2.883.windows.zip",
+                    Version = new Version("0.6.2.883")
                 };
             }
 
@@ -265,7 +265,7 @@ namespace NzbDrone.Core.Test.UpdateTests
         public void should_log_error_when_app_data_is_child_of_startup_folder()
         {
             Mocker.GetMock<IAppFolderInfo>().SetupGet(c => c.StartUpFolder).Returns(@"C:\Lidarr".AsOsAgnostic);
-            Mocker.GetMock<IAppFolderInfo>().SetupGet(c => c.AppDataFolder).Returns(@"C:\LIdarr\AppData".AsOsAgnostic);
+            Mocker.GetMock<IAppFolderInfo>().SetupGet(c => c.AppDataFolder).Returns(@"C:\Lidarr\AppData".AsOsAgnostic);
 
             Assert.Throws<CommandFailedException>(() => Subject.Execute(new ApplicationUpdateCommand()));
             ExceptionVerification.ExpectedErrors(1);

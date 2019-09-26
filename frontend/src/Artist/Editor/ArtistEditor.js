@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
+import getErrorMessage from 'Utilities/Object/getErrorMessage';
 import getSelectedIds from 'Utilities/Table/getSelectedIds';
 import selectAll from 'Utilities/Table/selectAll';
 import toggleSelected from 'Utilities/Table/toggleSelected';
@@ -19,7 +20,7 @@ import ArtistEditorRowConnector from './ArtistEditorRowConnector';
 import ArtistEditorFooter from './ArtistEditorFooter';
 import ArtistEditorFilterModalConnector from './ArtistEditorFilterModalConnector';
 
-function getColumns(showLanguageProfile, showMetadataProfile) {
+function getColumns(showMetadataProfile) {
   return [
     {
       name: 'status',
@@ -37,12 +38,6 @@ function getColumns(showLanguageProfile, showMetadataProfile) {
       label: 'Quality Profile',
       isSortable: true,
       isVisible: true
-    },
-    {
-      name: 'languageProfileId',
-      label: 'Language Profile',
-      isSortable: true,
-      isVisible: showLanguageProfile
     },
     {
       name: 'metadataProfileId',
@@ -86,7 +81,7 @@ class ArtistEditor extends Component {
       selectedState: {},
       isOrganizingArtistModalOpen: false,
       isRetaggingArtistModalOpen: false,
-      columns: getColumns(props.showLanguageProfile, props.showMetadataProfile)
+      columns: getColumns(props.showMetadataProfile)
     };
   }
 
@@ -177,7 +172,6 @@ class ArtistEditor extends Component {
       deleteError,
       isOrganizingArtist,
       isRetaggingArtist,
-      showLanguageProfile,
       showMetadataProfile,
       onSortPress,
       onFilterSelect
@@ -216,7 +210,7 @@ class ArtistEditor extends Component {
 
           {
             !isFetching && !!error &&
-              <div>Unable to load the calendar</div>
+              <div>{getErrorMessage(error, 'Failed to load artist from API')}</div>
           }
 
           {
@@ -266,7 +260,6 @@ class ArtistEditor extends Component {
           deleteError={deleteError}
           isOrganizingArtist={isOrganizingArtist}
           isRetaggingArtist={isRetaggingArtist}
-          showLanguageProfile={showLanguageProfile}
           showMetadataProfile={showMetadataProfile}
           onSaveSelected={this.onSaveSelected}
           onOrganizeArtistPress={this.onOrganizeArtistPress}
@@ -307,7 +300,6 @@ ArtistEditor.propTypes = {
   deleteError: PropTypes.object,
   isOrganizingArtist: PropTypes.bool.isRequired,
   isRetaggingArtist: PropTypes.bool.isRequired,
-  showLanguageProfile: PropTypes.bool.isRequired,
   showMetadataProfile: PropTypes.bool.isRequired,
   onSortPress: PropTypes.func.isRequired,
   onFilterSelect: PropTypes.func.isRequired,

@@ -61,7 +61,6 @@
 }
 
 .qualityProfileId,
-.languageProfileId,
 .metadataProfileId {
   composes: cell;
 
@@ -131,7 +130,8 @@
 .actions {
   composes: cell;
 
-  flex: 0 0 90px;
+  flex: 0 1 90px;
+  min-width: 60px;
 }
 
 .checkInput {

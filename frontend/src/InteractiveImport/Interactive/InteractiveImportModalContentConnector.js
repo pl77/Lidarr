@@ -127,7 +127,6 @@ class InteractiveImportModalContentConnector extends Component {
           albumReleaseId,
           tracks,
           quality,
-          language,
           disableReleaseSwitching
         } = item;
 
@@ -151,20 +150,13 @@ class InteractiveImportModalContentConnector extends Component {
           return false;
         }
 
-        if (!language) {
-          this.setState({ interactiveImportErrorMessage: 'Language must be chosen for each selected file' });
-          return false;
-        }
-
         files.push({
           path: item.path,
-          folderName: item.folderName,
           artistId: artist.id,
           albumId: album.id,
           albumReleaseId,
           trackIds: _.map(tracks, 'id'),
           quality,
-          language,
           downloadId: this.props.downloadId,
           disableReleaseSwitching
         });

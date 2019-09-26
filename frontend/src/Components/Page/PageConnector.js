@@ -8,7 +8,7 @@ import { saveDimensions, setIsSidebarVisible } from 'Store/Actions/appActions';
 import { fetchCustomFilters } from 'Store/Actions/customFilterActions';
 import { fetchArtist } from 'Store/Actions/artistActions';
 import { fetchTags } from 'Store/Actions/tagActions';
-import { fetchQualityProfiles, fetchLanguageProfiles, fetchMetadataProfiles, fetchUISettings, fetchImportLists } from 'Store/Actions/settingsActions';
+import { fetchQualityProfiles, fetchMetadataProfiles, fetchUISettings, fetchImportLists } from 'Store/Actions/settingsActions';
 import { fetchStatus } from 'Store/Actions/systemActions';
 import ErrorPage from './ErrorPage';
 import LoadingPage from './LoadingPage';
@@ -43,33 +43,27 @@ const selectAppProps = createSelector(
 );
 
 const selectIsPopulated = createSelector(
-  (state) => state.artist.isPopulated,
   (state) => state.customFilters.isPopulated,
   (state) => state.tags.isPopulated,
   (state) => state.settings.ui.isPopulated,
   (state) => state.settings.qualityProfiles.isPopulated,
-  (state) => state.settings.languageProfiles.isPopulated,
   (state) => state.settings.metadataProfiles.isPopulated,
   (state) => state.settings.importLists.isPopulated,
   (state) => state.system.status.isPopulated,
   (
-    artistIsPopulated,
     customFiltersIsPopulated,
     tagsIsPopulated,
     uiSettingsIsPopulated,
     qualityProfilesIsPopulated,
-    languageProfilesIsPopulated,
     metadataProfilesIsPopulated,
     importListsIsPopulated,
     systemStatusIsPopulated
   ) => {
     return (
-      artistIsPopulated &&
       customFiltersIsPopulated &&
       tagsIsPopulated &&
       uiSettingsIsPopulated &&
       qualityProfilesIsPopulated &&
-      languageProfilesIsPopulated &&
       metadataProfilesIsPopulated &&
       importListsIsPopulated &&
       systemStatusIsPopulated
@@ -78,33 +72,27 @@ const selectIsPopulated = createSelector(
 );
 
 const selectErrors = createSelector(
-  (state) => state.artist.error,
   (state) => state.customFilters.error,
   (state) => state.tags.error,
   (state) => state.settings.ui.error,
   (state) => state.settings.qualityProfiles.error,
-  (state) => state.settings.languageProfiles.error,
   (state) => state.settings.metadataProfiles.error,
   (state) => state.settings.importLists.error,
   (state) => state.system.status.error,
   (
-    artistError,
     customFiltersError,
     tagsError,
     uiSettingsError,
     qualityProfilesError,
-    languageProfilesError,
     metadataProfilesError,
     importListsError,
     systemStatusError
   ) => {
     const hasError = !!(
-      artistError ||
       customFiltersError ||
       tagsError ||
       uiSettingsError ||
       qualityProfilesError ||
-      languageProfilesError ||
       metadataProfilesError ||
       importListsError ||
       systemStatusError
@@ -112,12 +100,10 @@ const selectErrors = createSelector(
 
     return {
       hasError,
-      artistError,
       customFiltersError,
       tagsError,
       uiSettingsError,
       qualityProfilesError,
-      languageProfilesError,
       metadataProfilesError,
       importListsError,
       systemStatusError
@@ -164,9 +150,6 @@ function createMapDispatchToProps(dispatch, props) {
     dispatchFetchQualityProfiles() {
       dispatch(fetchQualityProfiles());
     },
-    dispatchFetchLanguageProfiles() {
-      dispatch(fetchLanguageProfiles());
-    },
     dispatchFetchMetadataProfiles() {
       dispatch(fetchMetadataProfiles());
     },
@@ -207,7 +190,6 @@ class PageConnector extends Component {
       this.props.dispatchFetchCustomFilters();
       this.props.dispatchFetchTags();
       this.props.dispatchFetchQualityProfiles();
-      this.props.dispatchFetchLanguageProfiles();
       this.props.dispatchFetchMetadataProfiles();
       this.props.dispatchFetchImportLists();
       this.props.dispatchFetchUISettings();
@@ -232,7 +214,6 @@ class PageConnector extends Component {
       dispatchFetchArtist,
       dispatchFetchTags,
       dispatchFetchQualityProfiles,
-      dispatchFetchLanguageProfiles,
       dispatchFetchMetadataProfiles,
       dispatchFetchImportLists,
       dispatchFetchUISettings,
@@ -272,7 +253,6 @@ PageConnector.propTypes = {
   dispatchFetchCustomFilters: PropTypes.func.isRequired,
   dispatchFetchTags: PropTypes.func.isRequired,
   dispatchFetchQualityProfiles: PropTypes.func.isRequired,
-  dispatchFetchLanguageProfiles: PropTypes.func.isRequired,
   dispatchFetchMetadataProfiles: PropTypes.func.isRequired,
   dispatchFetchImportLists: PropTypes.func.isRequired,
   dispatchFetchUISettings: PropTypes.func.isRequired,

@@ -214,7 +214,6 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Manual
             }
 
             item.Quality = decision.Item.Quality;
-            item.Language = decision.Item.Language;
             item.Size = _diskProvider.GetFileSize(decision.Item.Path);
             item.Rejections = decision.Rejections;
             item.Tags = decision.Item.FileTrackInfo;
@@ -255,6 +254,7 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Manual
                     var release = _releaseService.GetRelease(file.AlbumReleaseId);
                     var tracks = _trackService.GetTracks(file.TrackIds);
                     var fileTrackInfo = _audioTagService.ReadTags(file.Path) ?? new ParsedTrackInfo();
+                    var fileInfo = _diskProvider.GetFileInfo(file.Path);
 
                     var localTrack = new LocalTrack
                     {
@@ -262,8 +262,9 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Manual
                         Tracks = tracks,
                         FileTrackInfo = fileTrackInfo,
                         Path = file.Path,
+                        Size = fileInfo.Length,
+                        Modified = fileInfo.LastWriteTimeUtc,
                         Quality = file.Quality,
-                        Language = file.Language,
                         Artist = artist,
                         Album = album,
                         Release = release

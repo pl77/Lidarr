@@ -6,7 +6,6 @@ using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Datastore.Extensions;
 using System.Collections.Generic;
 using NzbDrone.Core.Messaging.Events;
-using NzbDrone.Core.Languages;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Common.Extensions;
 
@@ -15,12 +14,14 @@ namespace NzbDrone.Core.Music
     public interface IAlbumRepository : IBasicRepository<Album>
     {
         List<Album> GetAlbums(int artistId);
+        List<Album> GetLastAlbums(IEnumerable<int> artistMetadataIds);
+        List<Album> GetNextAlbums(IEnumerable<int> artistMetadataIds);
         List<Album> GetAlbumsByArtistMetadataId(int artistMetadataId);
         List<Album> GetAlbumsForRefresh(int artistId, IEnumerable<string> foreignIds);
         Album FindByTitle(int artistMetadataId, string title);
         Album FindById(string foreignId);
         PagingSpec<Album> AlbumsWithoutFiles(PagingSpec<Album> pagingSpec);
-        PagingSpec<Album> AlbumsWhereCutoffUnmet(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff, List<LanguagesBelowCutoff> languagesBelowCutoff);
+        PagingSpec<Album> AlbumsWhereCutoffUnmet(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff);
         List<Album> AlbumsBetweenDates(DateTime startDate, DateTime endDate, bool includeUnmonitored);
         List<Album> ArtistAlbumsBetweenDates(Artist artist, DateTime startDate, DateTime endDate, bool includeUnmonitored);
         void SetMonitoredFlat(Album album, bool monitored);
@@ -46,6 +47,32 @@ namespace NzbDrone.Core.Music
         {
             return Query.Join<Album, Artist>(JoinType.Inner, album => album.Artist, (l, r) => l.ArtistMetadataId == r.ArtistMetadataId)
                 .Where<Artist>(a => a.Id == artistId).ToList();
+        }
+
+        public List<Album> GetLastAlbums(IEnumerable<int> artistMetadataIds)
+        {
+            string query = string.Format("SELECT Albums.* " +
+                                         "FROM Albums " +
+                                         "WHERE Albums.ArtistMetadataId IN ({0}) " +
+                                         "AND Albums.ReleaseDate < datetime('now') " +
+                                         "GROUP BY Albums.ArtistMetadataId " +
+                                         "HAVING Albums.ReleaseDate = MAX(Albums.ReleaseDate)",
+                                         string.Join(", ", artistMetadataIds));
+
+            return Query.QueryText(query);
+        }
+
+        public List<Album> GetNextAlbums(IEnumerable<int> artistMetadataIds)
+        {
+            string query = string.Format("SELECT Albums.* " +
+                                         "FROM Albums " +
+                                         "WHERE Albums.ArtistMetadataId IN ({0}) " +
+                                         "AND Albums.ReleaseDate > datetime('now') " +
+                                         "GROUP BY Albums.ArtistMetadataId " +
+                                         "HAVING Albums.ReleaseDate = MIN(Albums.ReleaseDate)",
+                                         string.Join(", ", artistMetadataIds));
+
+            return Query.QueryText(query);
         }
 
         public List<Album> GetAlbumsByArtistMetadataId(int artistMetadataId)
@@ -78,11 +105,11 @@ namespace NzbDrone.Core.Music
             return pagingSpec;
         }
 
-        public PagingSpec<Album> AlbumsWhereCutoffUnmet(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff, List<LanguagesBelowCutoff> languagesBelowCutoff)
+        public PagingSpec<Album> AlbumsWhereCutoffUnmet(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff)
         {
 
-            pagingSpec.TotalRecords = GetCutOffAlbumsQueryCount(pagingSpec, qualitiesBelowCutoff, languagesBelowCutoff);
-            pagingSpec.Records = GetCutOffAlbumsQuery(pagingSpec, qualitiesBelowCutoff, languagesBelowCutoff).ToList();
+            pagingSpec.TotalRecords = GetCutOffAlbumsQueryCount(pagingSpec, qualitiesBelowCutoff);
+            pagingSpec.Records = GetCutOffAlbumsQuery(pagingSpec, qualitiesBelowCutoff).ToList();
 
             return pagingSpec;
         }
@@ -199,7 +226,7 @@ namespace NzbDrone.Core.Music
                                  currentTime.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
-        private QueryBuilder<Album> GetCutOffAlbumsQuery(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff, List<LanguagesBelowCutoff> languagesBelowCutoff)
+        private QueryBuilder<Album> GetCutOffAlbumsQuery(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff)
         {
             string sortKey;
             string monitored = "(Albums.[Monitored] = 0) OR (Artists.[Monitored] = 0)";
@@ -235,11 +262,10 @@ namespace NzbDrone.Core.Music
                                          "WHERE {0} " +
                                          "AND AlbumReleases.Monitored = 1 " +
                                          "GROUP BY Albums.Id " +
-                                         "HAVING ({1} OR {2}) " +
-                                         "ORDER BY {3} {4} LIMIT {5} OFFSET {6}",
+                                         "HAVING {1} " +
+                                         "ORDER BY {2} {3} LIMIT {4} OFFSET {5}",
                                          monitored,
                                          BuildQualityCutoffWhereClause(qualitiesBelowCutoff),
-                                         BuildLanguageCutoffWhereClause(languagesBelowCutoff),
                                          sortKey,
                                          pagingSpec.ToSortDirection(),
                                          pagingSpec.PageSize,
@@ -249,7 +275,7 @@ namespace NzbDrone.Core.Music
 
         }
 
-        private int GetCutOffAlbumsQueryCount(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff, List<LanguagesBelowCutoff> languagesBelowCutoff)
+        private int GetCutOffAlbumsQueryCount(PagingSpec<Album> pagingSpec, List<QualitiesBelowCutoff> qualitiesBelowCutoff)
         {
             var monitored = "(Albums.[Monitored] = 0) OR (Artists.[Monitored] = 0)";
 
@@ -267,28 +293,11 @@ namespace NzbDrone.Core.Music
                                          "WHERE {0} " +
                                          "AND AlbumReleases.Monitored = 1 " +
                                          "GROUP BY Albums.Id " +
-                                         "HAVING ({1} OR {2}) ",
+                                         "HAVING {1}",
                                          monitored,
-                                         BuildQualityCutoffWhereClause(qualitiesBelowCutoff),
-                                         BuildLanguageCutoffWhereClause(languagesBelowCutoff));
+                                         BuildQualityCutoffWhereClause(qualitiesBelowCutoff));
 
             return Query.QueryText(query).Count();
-        }
-
-
-        private string BuildLanguageCutoffWhereClause(List<LanguagesBelowCutoff> languagesBelowCutoff)
-        {
-            var clauses = new List<string>();
-
-            foreach (var language in languagesBelowCutoff)
-            {
-                foreach (var belowCutoff in language.LanguageIds)
-                {
-                    clauses.Add(string.Format("(Artists.[LanguageProfileId] = {0} AND TrackFiles.[Language] = {1})", language.ProfileId, belowCutoff));
-                }
-            }
-
-            return string.Format("({0})", string.Join(" OR ", clauses));
         }
 
         private string BuildQualityCutoffWhereClause(List<QualitiesBelowCutoff> qualitiesBelowCutoff)

@@ -82,10 +82,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             artist.SortName = Parser.Parser.NormalizeTitle(artist.Metadata.Value.Name);
 
             artist.Albums = FilterAlbums(httpResponse.Resource.Albums, metadataProfileId)
-                .Select(x => new Album {
-                        ForeignAlbumId = x.Id
-                    })
-                .ToList();
+                .Select(x => MapAlbum(x, null)).ToList();
 
             return artist;
         }
@@ -136,6 +133,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             var artists = httpResponse.Resource.Artists.Select(MapArtistMetadata).ToList();
             var artistDict = artists.ToDictionary(x => x.ForeignArtistId, x => x);
             var album = MapAlbum(httpResponse.Resource, artistDict);
+            album.ArtistMetadata = artistDict[httpResponse.Resource.ArtistId];
 
             return new Tuple<string, Album, List<ArtistMetadata>>(httpResponse.Resource.ArtistId, album, artists);
         }
@@ -181,8 +179,6 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                                     .SetSegment("route", "search")
                                     .AddQueryParam("type", "artist")
                                     .AddQueryParam("query", title.ToLower().Trim())
-                                    //.AddQueryParam("images","false") // Should pass these on import search to avoid looking to fanart and wiki 
-                                    //.AddQueryParam("overview","false")
                                     .Build();
 
 
@@ -293,6 +289,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                 artist.Metadata = MapArtistMetadata(resource.Artists.Single(x => x.Id == resource.ArtistId));
             }
             album.Artist = artist;
+            album.ArtistMetadata = artist.Metadata;
 
             return album;
         }
@@ -301,6 +298,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         {
             Album album = new Album();
             album.ForeignAlbumId = resource.Id;
+            album.OldForeignAlbumIds = resource.OldIds;
             album.Title = resource.Title;
             album.Overview = resource.Overview;
             album.Disambiguation = resource.Disambiguation;
@@ -315,6 +313,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             album.SecondaryTypes = resource.SecondaryTypes.Select(MapSecondaryTypes).ToList();
             album.Ratings = MapRatings(resource.Rating);
             album.Links = resource.Links?.Select(MapLink).ToList();
+            album.Genres = resource.Genres;
             album.CleanTitle = Parser.Parser.CleanArtistName(album.Title);
 
             if (resource.Releases != null)
@@ -331,6 +330,7 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
         {
             AlbumRelease release = new AlbumRelease();
             release.ForeignReleaseId = resource.Id;
+            release.OldForeignReleaseIds = resource.OldIds;
             release.Title = resource.Title;
             release.Status = resource.Status;
             release.Label = resource.Label;
@@ -384,7 +384,9 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
                 ArtistMetadata = artistDict[resource.ArtistId],
                 Title = resource.TrackName,
                 ForeignTrackId = resource.Id,
+                OldForeignTrackIds = resource.OldIds,
                 ForeignRecordingId = resource.RecordingId,
+                OldForeignRecordingIds = resource.OldRecordingIds,
                 TrackNumber = resource.TrackNumber,
                 AbsoluteTrackNumber = resource.TrackPosition,
                 Duration = resource.DurationMs,
@@ -400,7 +402,9 @@ namespace NzbDrone.Core.MetadataSource.SkyHook
             ArtistMetadata artist = new ArtistMetadata();
 
             artist.Name = resource.ArtistName;
+            artist.Aliases = resource.ArtistAliases;
             artist.ForeignArtistId = resource.Id;
+            artist.OldForeignArtistIds = resource.OldIds;
             artist.Genres = resource.Genres;
             artist.Overview = resource.Overview;
             artist.Disambiguation = resource.Disambiguation;

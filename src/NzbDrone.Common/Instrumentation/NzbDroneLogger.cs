@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using LogentriesNLog;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -45,7 +44,6 @@ namespace NzbDrone.Common.Instrumentation
             if (updateApp)
             {
                 RegisterUpdateFile(appFolderInfo);
-                RegisterLogEntries();
             }
             else
             {
@@ -57,32 +55,9 @@ namespace NzbDrone.Common.Instrumentation
                 RegisterAppFile(appFolderInfo);
             }
 
-            LogManager.ReconfigExistingLoggers();
-        }
-
-        public static void UnRegisterRemoteLoggers()
-        {
-            var sentryRules = LogManager.Configuration.LoggingRules.Where(r => r.Targets.Any(t => t.Name == "sentryTarget"));
-
-            foreach (var rules in sentryRules)
-            {
-                rules.Targets.Clear();
-            }
+            RegisterAuthLogger();
 
             LogManager.ReconfigExistingLoggers();
-        }
-
-        private static void RegisterLogEntries()
-        {
-            var target = new LogentriesTarget();
-            target.Name = "logentriesTarget";
-            target.Token = "d3a83ee9-74fb-4045-ad25-a84c1d4d7c81";
-            target.LogHostname = true;
-            target.Debug = false;
-
-            var loggingRule = new LoggingRule("*", LogLevel.Info, target);
-            LogManager.Configuration.AddTarget("logentries", target);
-            LogManager.Configuration.LoggingRules.Add(loggingRule);
         }
 
         private static void RegisterSentry(bool updateClient)
@@ -98,7 +73,7 @@ namespace NzbDrone.Common.Instrumentation
             else
             {
                 dsn = RuntimeInfo.IsProduction
-                    ? "https://daa808e34499445fb49a0da1d38bcbbe@sentry.io/209545"
+                    ? "https://f607fb34f89745f9bfe5ded0a97ab00a@sentry.io/209545"
                     : "https://28faaa7023384031b29e38d3be74fa11@sentry.io/227247";
             }
 
@@ -192,6 +167,23 @@ namespace NzbDrone.Common.Instrumentation
 
             LogManager.Configuration.AddTarget("updateFile", fileTarget);
             LogManager.Configuration.LoggingRules.Add(loggingRule);
+        }
+
+        private static void RegisterAuthLogger()
+        {
+            var consoleTarget = LogManager.Configuration.FindTargetByName("console");
+            var fileTarget = LogManager.Configuration.FindTargetByName("appFileInfo");
+
+            var target = consoleTarget ?? fileTarget ?? new NullTarget();
+
+            // Send Auth to Console and info app file, but not the log database
+            var rule = new LoggingRule("Auth", LogLevel.Info, target) { Final = true };
+            if (consoleTarget != null && fileTarget != null)
+            {
+                rule.Targets.Add(fileTarget);
+            }
+
+            LogManager.Configuration.LoggingRules.Insert(0, rule);
         }
 
         public static Logger GetLogger(Type obj)

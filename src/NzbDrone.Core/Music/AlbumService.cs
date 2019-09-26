@@ -15,17 +15,18 @@ namespace NzbDrone.Core.Music
         Album GetAlbum(int albumId);
         List<Album> GetAlbums(IEnumerable<int> albumIds);
         List<Album> GetAlbumsByArtist(int artistId);
+        List<Album> GetNextAlbumsByArtistMetadataId(IEnumerable<int> artistMetadataIds);
+        List<Album> GetLastAlbumsByArtistMetadataId(IEnumerable<int> artistMetadataIds);
         List<Album> GetAlbumsByArtistMetadataId(int artistMetadataId);
         List<Album> GetAlbumsForRefresh(int artistMetadataId, IEnumerable<string> foreignIds);
         Album AddAlbum(Album newAlbum);
         Album FindById(string foreignId);
-        Album FindByTitle(int artistId, string title);
-        Album FindByTitleInexact(int artistId, string title);
+        Album FindByTitle(int artistMetadataId, string title);
+        Album FindByTitleInexact(int artistMetadataId, string title);
         List<Album> GetCandidates(int artistId, string title);
         void DeleteAlbum(int albumId, bool deleteFiles);
         List<Album> GetAllAlbums();
         Album UpdateAlbum(Album album);
-        List<Album> UpdateAlbums(List<Album> album);
         void SetAlbumMonitored(int albumId, bool monitored);
         void SetMonitored(IEnumerable<int> ids, bool monitored);
         PagingSpec<Album> AlbumsWithoutFiles(PagingSpec<Album> pagingSpec);
@@ -77,9 +78,9 @@ namespace NzbDrone.Core.Music
             return _albumRepository.FindById(lidarrId);
         }
 
-        public Album FindByTitle(int artistId, string title)
+        public Album FindByTitle(int artistMetadataId, string title)
         {
-            return _albumRepository.FindByTitle(artistId, title);
+            return _albumRepository.FindByTitle(artistMetadataId, title);
         }
 
         private List<Tuple<Func<Album, string, double>, string>> AlbumScoringFunctions(string title, string cleanTitle)
@@ -169,6 +170,16 @@ namespace NzbDrone.Core.Music
         public List<Album> GetAlbumsByArtist(int artistId)
         {
             return _albumRepository.GetAlbums(artistId).ToList();
+        }
+
+        public List<Album> GetNextAlbumsByArtistMetadataId(IEnumerable<int> artistMetadataIds)
+        {
+            return _albumRepository.GetNextAlbums(artistMetadataIds).ToList();
+        }
+
+        public List<Album> GetLastAlbumsByArtistMetadataId(IEnumerable<int> artistMetadataIds)
+        {
+            return _albumRepository.GetLastAlbums(artistMetadataIds).ToList();
         }
 
         public List<Album> GetAlbumsByArtistMetadataId(int artistMetadataId)
@@ -278,16 +289,6 @@ namespace NzbDrone.Core.Music
             {
                 _eventAggregator.PublishEvent(new AlbumEditedEvent(album, album));
             }
-        }
-
-        public List<Album> UpdateAlbums(List<Album> albums)
-        {
-            _logger.Debug("Updating {0} albums", albums.Count);
-
-            _albumRepository.UpdateMany(albums);
-            _logger.Debug("{0} albums updated", albums.Count);
-
-            return albums;
         }
 
         public void Handle(ArtistDeletedEvent message)

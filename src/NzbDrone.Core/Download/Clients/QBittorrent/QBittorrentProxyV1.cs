@@ -192,6 +192,19 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
             }
         }
 
+        public void AddLabel(string label, QBittorrentSettings settings)
+        {
+            var request = BuildRequest(settings).Resource("/command/addCategory")
+                                                .Post()
+                                                .AddFormParameter("category", label);
+            ProcessRequest(request, settings);
+        }
+
+        public Dictionary<string, QBittorrentLabel> GetLabels(QBittorrentSettings settings)
+        {
+            throw new NotSupportedException("qBittorrent api v1 does not support getting all torrent categories");
+        }
+
         public void SetTorrentSeedingConfiguration(string hash, TorrentSeedConfiguration seedConfiguration, QBittorrentSettings settings)
         {
             // Not supported on api v1
@@ -242,18 +255,16 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
                                                 .Post()
                                                 .AddFormParameter("hashes", hash)
                                                 .AddFormParameter("value", enabled ? "true" : "false");
-
             ProcessRequest(request, settings);
         }
 
         private HttpRequestBuilder BuildRequest(QBittorrentSettings settings)
         {
-            var requestBuilder = new HttpRequestBuilder(settings.UseSsl, settings.Host, settings.Port)
+            var requestBuilder = new HttpRequestBuilder(settings.UseSsl, settings.Host, settings.Port, settings.UrlBase)
             {
                 LogResponseContent = true,
                 NetworkCredential = new NetworkCredential(settings.Username, settings.Password)
             };
-
             return requestBuilder;
         }
 

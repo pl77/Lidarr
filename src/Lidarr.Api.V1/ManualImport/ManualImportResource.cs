@@ -1,7 +1,6 @@
 using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.MediaFiles.TrackImport.Manual;
 using NzbDrone.Core.Qualities;
-using NzbDrone.Core.Languages;
 using Lidarr.Api.V1.Artist;
 using Lidarr.Api.V1.Albums;
 using Lidarr.Api.V1.Tracks;
@@ -16,7 +15,6 @@ namespace Lidarr.Api.V1.ManualImport
     {
         public string Path { get; set; }
         public string RelativePath { get; set; }
-        public string FolderName { get; set; }
         public string Name { get; set; }
         public long Size { get; set; }
         public ArtistResource Artist { get; set; }
@@ -24,7 +22,6 @@ namespace Lidarr.Api.V1.ManualImport
         public int AlbumReleaseId { get; set; }
         public List<TrackResource> Tracks { get; set; }
         public QualityModel Quality { get; set; }
-        public Language Language { get; set; }
         public int QualityWeight { get; set; }
         public string DownloadId { get; set; }
         public IEnumerable<Rejection> Rejections { get; set; }
@@ -45,7 +42,6 @@ namespace Lidarr.Api.V1.ManualImport
                 Id = model.Id,
                 Path = model.Path,
                 RelativePath = model.RelativePath,
-                FolderName = model.FolderName,
                 Name = model.Name,
                 Size = model.Size,
                 Artist = model.Artist.ToResource(),
@@ -53,7 +49,6 @@ namespace Lidarr.Api.V1.ManualImport
                 AlbumReleaseId = model.Release?.Id ?? 0,
                 Tracks = model.Tracks.ToResource(),
                 Quality = model.Quality,
-                Language = model.Language,
                 //QualityWeight
                 DownloadId = model.DownloadId,
                 Rejections = model.Rejections,

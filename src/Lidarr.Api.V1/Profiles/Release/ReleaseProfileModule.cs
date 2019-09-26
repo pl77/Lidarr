@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using FluentValidation.Results;
+using FluentValidation;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Profiles.Releases;
 using Lidarr.Http;
@@ -15,24 +15,22 @@ namespace Lidarr.Api.V1.Profiles.Release
         {
             _releaseProfileService = releaseProfileService;
 
-            GetResourceById = Get;
+            GetResourceById = GetById;
             GetResourceAll = GetAll;
             CreateResource = Create;
             UpdateResource = Update;
-            DeleteResource = Delete;
+            DeleteResource = DeleteById;
 
-            SharedValidator.Custom(restriction =>
+            SharedValidator.RuleFor(r => r).Custom((restriction, context) =>
             {
                 if (restriction.Ignored.IsNullOrWhiteSpace() && restriction.Required.IsNullOrWhiteSpace() && restriction.Preferred.Empty())
                 {
-                    return new ValidationFailure("", "'Must contain', 'Must not contain' or 'Preferred' is required");
+                    context.AddFailure("Either 'Must contain' or 'Must not contain' is required");
                 }
-
-                return null;
             });
         }
 
-        private ReleaseProfileResource Get(int id)
+        private ReleaseProfileResource GetById(int id)
         {
             return _releaseProfileService.Get(id).ToResource();
         }
@@ -52,7 +50,7 @@ namespace Lidarr.Api.V1.Profiles.Release
             _releaseProfileService.Update(resource.ToModel());
         }
 
-        private void Delete(int id)
+        private void DeleteById(int id)
         {
             _releaseProfileService.Delete(id);
         }

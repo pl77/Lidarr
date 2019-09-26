@@ -6,6 +6,7 @@ import AutoCompleteInput from './AutoCompleteInput';
 import CaptchaInputConnector from './CaptchaInputConnector';
 import CheckInput from './CheckInput';
 import DeviceInputConnector from './DeviceInputConnector';
+import PlaylistInputConnector from './PlaylistInputConnector';
 import KeyValueListInput from './KeyValueListInput';
 import MonitorAlbumsSelectInput from './MonitorAlbumsSelectInput';
 import NumberInput from './NumberInput';
@@ -13,12 +14,11 @@ import OAuthInputConnector from './OAuthInputConnector';
 import PasswordInput from './PasswordInput';
 import PathInputConnector from './PathInputConnector';
 import QualityProfileSelectInputConnector from './QualityProfileSelectInputConnector';
-import LanguageProfileSelectInputConnector from './LanguageProfileSelectInputConnector';
 import MetadataProfileSelectInputConnector from './MetadataProfileSelectInputConnector';
 import AlbumReleaseSelectInputConnector from './AlbumReleaseSelectInputConnector';
 import RootFolderSelectInputConnector from './RootFolderSelectInputConnector';
 import SeriesTypeSelectInput from './SeriesTypeSelectInput';
-import SelectInput from './SelectInput';
+import EnhancedSelectInput from './EnhancedSelectInput';
 import TagInputConnector from './TagInputConnector';
 import TextTagInputConnector from './TextTagInputConnector';
 import TextInput from './TextInput';
@@ -38,6 +38,9 @@ function getComponent(type) {
 
     case inputTypes.DEVICE:
       return DeviceInputConnector;
+
+    case inputTypes.PLAYLIST:
+      return PlaylistInputConnector;
 
     case inputTypes.KEY_VALUE_LIST:
       return KeyValueListInput;
@@ -60,9 +63,6 @@ function getComponent(type) {
     case inputTypes.QUALITY_PROFILE_SELECT:
       return QualityProfileSelectInputConnector;
 
-    case inputTypes.LANGUAGE_PROFILE_SELECT:
-      return LanguageProfileSelectInputConnector;
-
     case inputTypes.METADATA_PROFILE_SELECT:
       return MetadataProfileSelectInputConnector;
 
@@ -73,7 +73,7 @@ function getComponent(type) {
       return RootFolderSelectInputConnector;
 
     case inputTypes.SELECT:
-      return SelectInput;
+      return EnhancedSelectInput;
 
     case inputTypes.SERIES_TYPE_SELECT:
       return SeriesTypeSelectInput;

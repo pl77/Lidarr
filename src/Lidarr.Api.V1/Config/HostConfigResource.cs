@@ -1,6 +1,7 @@
 using NzbDrone.Common.Http.Proxy;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Security;
 using NzbDrone.Core.Update;
 using Lidarr.Http.REST;
 
@@ -18,6 +19,7 @@ namespace Lidarr.Api.V1.Config
         public string Username { get; set; }
         public string Password { get; set; }
         public string LogLevel { get; set; }
+        public string ConsoleLogLevel { get; set; }
         public string Branch { get; set; }
         public string ApiKey { get; set; }
         public string SslCertHash { get; set; }
@@ -33,6 +35,7 @@ namespace Lidarr.Api.V1.Config
         public string ProxyPassword { get; set; }
         public string ProxyBypassFilter { get; set; }
         public bool ProxyBypassLocalAddresses { get; set; }
+        public CertificateValidationType CertificateValidation { get; set; }
         public string BackupFolder { get; set; }
         public int BackupInterval { get; set; }
         public int BackupRetention { get; set; }
@@ -55,6 +58,7 @@ namespace Lidarr.Api.V1.Config
                 //Username
                 //Password
                 LogLevel = model.LogLevel,
+                ConsoleLogLevel = model.ConsoleLogLevel,
                 Branch = model.Branch,
                 ApiKey = model.ApiKey,
                 SslCertHash = model.SslCertHash,
@@ -70,6 +74,7 @@ namespace Lidarr.Api.V1.Config
                 ProxyPassword = configService.ProxyPassword,
                 ProxyBypassFilter = configService.ProxyBypassFilter,
                 ProxyBypassLocalAddresses = configService.ProxyBypassLocalAddresses,
+                CertificateValidation = configService.CertificateValidation,
                 BackupFolder = configService.BackupFolder,
                 BackupInterval = configService.BackupInterval,
                 BackupRetention = configService.BackupRetention

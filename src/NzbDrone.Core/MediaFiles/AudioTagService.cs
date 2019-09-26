@@ -16,6 +16,7 @@ using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
 using TagLib;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.MediaCover;
 
 namespace NzbDrone.Core.MediaFiles
 {
@@ -40,6 +41,7 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IMediaFileService _mediaFileService;
         private readonly IDiskProvider _diskProvider;
         private readonly IArtistService _artistService;
+        private readonly IMapCoversToLocal _mediaCoverService;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
         
@@ -47,6 +49,7 @@ namespace NzbDrone.Core.MediaFiles
                                IMediaFileService mediaFileService,
                                IDiskProvider diskProvider,
                                IArtistService artistService,
+                               IMapCoversToLocal mediaCoverService,
                                IEventAggregator eventAggregator,
                                Logger logger)
         {
@@ -54,6 +57,7 @@ namespace NzbDrone.Core.MediaFiles
             _mediaFileService = mediaFileService;
             _diskProvider = diskProvider;
             _artistService = artistService;
+            _mediaCoverService = mediaCoverService;
             _eventAggregator = eventAggregator;
             _logger = logger;
         }
@@ -76,6 +80,24 @@ namespace NzbDrone.Core.MediaFiles
             var albumartist = album.Artist.Value;
             var artist = track.ArtistMetadata.Value;
 
+            var cover = album.Images.FirstOrDefault(x => x.CoverType == MediaCoverTypes.Cover);
+            string imageFile = null;
+            long imageSize = 0;
+            if (cover != null)
+            {
+                imageFile = _mediaCoverService.GetCoverPath(album.Id, MediaCoverEntity.Album, cover.CoverType, cover.Extension, null);
+                _logger.Trace($"Embedding: {imageFile}");
+                var fileInfo = _diskProvider.GetFileInfo(imageFile);
+                if (fileInfo.Exists)
+                {
+                    imageSize = fileInfo.Length;
+                }
+                else
+                {
+                    imageFile = null;
+                }
+            }
+
             return new AudioTag {
                 Title = track.Title,
                 Performers = new [] { artist.Name },
@@ -85,12 +107,16 @@ namespace NzbDrone.Core.MediaFiles
                 Album = album.Title,
                 Disc = (uint)track.MediumNumber,
                 DiscCount = (uint)release.Media.Count,
-                Media = release.Media[track.MediumNumber - 1].Format,
+                // We may have omitted media so index in the list isn't the same as medium number
+                Media = release.Media.SingleOrDefault(x => x.Number == track.MediumNumber).Format,
                 Date = release.ReleaseDate,
                 Year = (uint)album.ReleaseDate?.Year,
                 OriginalReleaseDate = album.ReleaseDate,
                 OriginalYear = (uint)album.ReleaseDate?.Year,
                 Publisher = release.Label.FirstOrDefault(),
+                Genres = album.Genres.Any() ? album.Genres.ToArray() : artist.Genres.ToArray(),
+                ImageFile = imageFile,
+                ImageSize = imageSize,
                 MusicBrainzReleaseCountry = IsoCountries.Find(release.Country.FirstOrDefault())?.TwoLetterCode,
                 MusicBrainzReleaseStatus = release.Status.ToLower(),
                 MusicBrainzReleaseType = album.AlbumType.ToLower(),
@@ -104,10 +130,13 @@ namespace NzbDrone.Core.MediaFiles
             };
         }
 
-        private void UpdateTrackfileSize(TrackFile trackfile, string path)
+        private void UpdateTrackfileSizeAndModified(TrackFile trackfile, string path)
         {
             // update the saved file size so that the importer doesn't get confused on the next scan
-            trackfile.Size = _diskProvider.GetFileSize(path);
+            var fileInfo = _diskProvider.GetFileInfo(path);
+            trackfile.Size = fileInfo.Length;
+            trackfile.Modified = fileInfo.LastWriteTimeUtc;
+            
             if (trackfile.Id > 0)
             {
                 _mediaFileService.Update(trackfile);
@@ -190,7 +219,7 @@ namespace NzbDrone.Core.MediaFiles
             _logger.Debug($"Writing tags for {trackfile}");
             newTags.Write(path);
 
-            UpdateTrackfileSize(trackfile, path);
+            UpdateTrackfileSizeAndModified(trackfile, path);
             
             _eventAggregator.PublishEvent(new TrackFileRetaggedEvent(trackfile.Artist.Value, trackfile, diff, _configService.ScrubAudioTags));
         }
@@ -276,7 +305,7 @@ namespace NzbDrone.Core.MediaFiles
 
             RemoveMusicBrainzTags(path);
             
-            UpdateTrackfileSize(trackfile, path);
+            UpdateTrackfileSizeAndModified(trackfile, path);
         }
 
         public List<RetagTrackFilePreview> GetRetagPreviewsByArtist(int artistId)

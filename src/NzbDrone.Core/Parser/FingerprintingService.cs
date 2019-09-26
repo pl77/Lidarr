@@ -362,6 +362,7 @@ namespace NzbDrone.Core.Parser
             httpRequest.Headers.Add("Content-Encoding", "gzip");
             httpRequest.Headers.ContentType = "application/x-www-form-urlencoded";
             httpRequest.SuppressHttpError = true;
+            httpRequest.RequestTimeout = TimeSpan.FromSeconds(5);
 
             HttpResponse<LookupResponse> httpResponse;
 
@@ -372,6 +373,11 @@ namespace NzbDrone.Core.Parser
             catch (UnexpectedHtmlContentException e)
             {
                 _logger.Warn(e, "AcoustId API gave invalid response");
+                return;
+            }
+            catch (Exception e)
+            {
+                _logger.Warn(e, "AcoustId API lookup failed");
                 return;
             }
 

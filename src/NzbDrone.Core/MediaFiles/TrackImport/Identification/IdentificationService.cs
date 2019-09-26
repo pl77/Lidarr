@@ -173,17 +173,19 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             return false;
         }
 
-        private List<LocalTrack> ToLocalTrack(IEnumerable<TrackFile> trackfiles)
+        private List<LocalTrack> ToLocalTrack(IEnumerable<TrackFile> trackfiles, LocalAlbumRelease localRelease)
         {
-            var localTracks = trackfiles.Select(x => new LocalTrack {
-                    Path = x.Path,
-                    Size = x.Size,
-                    Modified = x.Modified,
-                    FileTrackInfo = _audioTagService.ReadTags(x.Path),
-                    ExistingFile = true,
-                    AdditionalFile = true,
-                    Quality = x.Quality
-                })
+            var scanned = trackfiles.Join(localRelease.LocalTracks, t => t.Path, l => l.Path, (track, localTrack) => localTrack);
+            var toScan = trackfiles.ExceptBy(t => t.Path, scanned, s => s.Path, StringComparer.InvariantCulture);
+            var localTracks = scanned.Concat(toScan.Select(x => new LocalTrack {
+                        Path = x.Path,
+                        Size = x.Size,
+                        Modified = x.Modified,
+                        FileTrackInfo = _audioTagService.ReadTags(x.Path),
+                        ExistingFile = true,
+                        AdditionalFile = true,
+                        Quality = x.Quality
+                    }))
                 .ToList();
 
             localTracks.ForEach(x => _augmentingService.Augment(x, true));
@@ -218,7 +220,7 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             // convert all the TrackFiles that represent extra files to List<LocalTrack>
             var allLocalTracks = ToLocalTrack(candidateReleases
                                               .SelectMany(x => x.ExistingTracks)
-                                              .DistinctBy(x => x.Path));
+                                              .DistinctBy(x => x.Path), localAlbumRelease);
 
             _logger.Debug($"Retrieved {allTracks.Count} possible tracks in {watch.ElapsedMilliseconds}ms");
             
@@ -242,7 +244,8 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
                     allLocalTracks.AddRange(ToLocalTrack(newCandidates
                                                          .SelectMany(x  => x.ExistingTracks)
                                                          .DistinctBy(x => x.Path)
-                                                         .ExceptBy(x => x.Path, allLocalTracks, x => x.Path, PathEqualityComparer.Instance)));
+                                                         .ExceptBy(x => x.Path, allLocalTracks, x => x.Path, PathEqualityComparer.Instance),
+                                                         localAlbumRelease));
                 }
 
                 // fingerprint all the local files in candidates we might be matching against
@@ -275,7 +278,8 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             if (releaseIds.Count == 1 && releaseIds[0].IsNotNullOrWhiteSpace())
             {
                 _logger.Debug("Selecting release from consensus ForeignReleaseId [{0}]", releaseIds[0]);
-                tagMbidRelease = _releaseService.GetReleaseByForeignReleaseId(releaseIds[0]);
+                tagMbidRelease = _releaseService.GetReleaseByForeignReleaseId(releaseIds[0], true);
+                
                 if (tagMbidRelease != null)
                 {
                     tagCandidate = GetCandidatesByRelease(new List<AlbumRelease> { tagMbidRelease }, includeExisting);
@@ -555,7 +559,8 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             var recordingId = localTrack.FileTrackInfo.RecordingMBId;
             if (recordingId.IsNotNullOrWhiteSpace())
             {
-                dist.AddBool("recording_id", localTrack.FileTrackInfo.RecordingMBId != mbTrack.ForeignRecordingId);
+                dist.AddBool("recording_id", localTrack.FileTrackInfo.RecordingMBId != mbTrack.ForeignRecordingId &&
+                             !mbTrack.OldForeignRecordingIds.Contains(localTrack.FileTrackInfo.RecordingMBId));
             }
 
             // for fingerprinted files
@@ -657,8 +662,8 @@ namespace NzbDrone.Core.MediaFiles.TrackImport.Identification
             var mbAlbumId = MostCommon(localTracks.Select(x => x.FileTrackInfo.ReleaseMBId));
             if (mbAlbumId.IsNotNullOrWhiteSpace())
             {
-                dist.AddEquality("album_id", mbAlbumId, new List<string> { release.ForeignReleaseId });
-                _logger.Trace("album_id: {0} vs {1}; {2}", mbAlbumId, release.ForeignReleaseId, dist.NormalizedDistance());
+                dist.AddBool("album_id", mbAlbumId != release.ForeignReleaseId && !release.OldForeignReleaseIds.Contains(mbAlbumId));
+                _logger.Trace("album_id: {0} vs {1} or {2}; {3}", mbAlbumId, release.ForeignReleaseId, string.Join(", ", release.OldForeignReleaseIds), dist.NormalizedDistance());
             }
 
             // tracks

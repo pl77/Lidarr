@@ -31,7 +31,6 @@ class ArtistEditorRow extends Component {
       artistName,
       artistType,
       monitored,
-      languageProfile,
       metadataProfile,
       qualityProfile,
       albumFolder,
@@ -68,13 +67,6 @@ class ArtistEditorRow extends Component {
         </TableRowCell>
 
         {
-          _.find(columns, { name: 'languageProfileId' }).isVisible &&
-            <TableRowCell>
-              {languageProfile.name}
-            </TableRowCell>
-        }
-
-        {
           _.find(columns, { name: 'metadataProfileId' }).isVisible &&
             <TableRowCell>
               {metadataProfile.name}
@@ -109,9 +101,8 @@ ArtistEditorRow.propTypes = {
   status: PropTypes.string.isRequired,
   foreignArtistId: PropTypes.string.isRequired,
   artistName: PropTypes.string.isRequired,
-  artistType: PropTypes.string.isRequired,
+  artistType: PropTypes.string,
   monitored: PropTypes.bool.isRequired,
-  languageProfile: PropTypes.object.isRequired,
   metadataProfile: PropTypes.object.isRequired,
   qualityProfile: PropTypes.object.isRequired,
   albumFolder: PropTypes.bool.isRequired,

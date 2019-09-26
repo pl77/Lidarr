@@ -11,7 +11,6 @@ import ConfirmModal from 'Components/Modal/ConfirmModal';
 import TableRow from 'Components/Table/TableRow';
 import TableRowCell from 'Components/Table/Cells/TableRowCell';
 import Popover from 'Components/Tooltip/Popover';
-import TrackLanguage from 'Album/TrackLanguage';
 import TrackQuality from 'Album/TrackQuality';
 import ProtocolLabel from 'Activity/Queue/ProtocolLabel';
 import Peers from './Peers';
@@ -112,7 +111,6 @@ class InteractiveSearchRow extends Component {
       seeders,
       leechers,
       quality,
-      language,
       preferredWordScore,
       rejections,
       downloadAllowed,
@@ -125,7 +123,7 @@ class InteractiveSearchRow extends Component {
 
     return (
       <TableRow>
-        <TableRowCell>
+        <TableRowCell className={styles.protocol}>
           <ProtocolLabel
             protocol={protocol}
           />
@@ -144,7 +142,7 @@ class InteractiveSearchRow extends Component {
           </Link>
         </TableRowCell>
 
-        <TableRowCell>
+        <TableRowCell className={styles.indexer}>
           {indexer}
         </TableRowCell>
 
@@ -152,7 +150,7 @@ class InteractiveSearchRow extends Component {
           {formatBytes(size)}
         </TableRowCell>
 
-        <TableRowCell>
+        <TableRowCell className={styles.peers}>
           {
             protocol === 'torrent' &&
               <Peers
@@ -160,10 +158,6 @@ class InteractiveSearchRow extends Component {
                 leechers={leechers}
               />
           }
-        </TableRowCell>
-
-        <TableRowCell className={styles.language}>
-          <TrackLanguage language={language} />
         </TableRowCell>
 
         <TableRowCell className={styles.quality}>
@@ -245,7 +239,6 @@ InteractiveSearchRow.propTypes = {
   seeders: PropTypes.number,
   leechers: PropTypes.number,
   quality: PropTypes.object.isRequired,
-  language: PropTypes.object.isRequired,
   preferredWordScore: PropTypes.number.isRequired,
   rejections: PropTypes.arrayOf(PropTypes.string).isRequired,
   downloadAllowed: PropTypes.bool.isRequired,

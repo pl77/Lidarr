@@ -14,8 +14,6 @@ using System.Collections.Generic;
 using NzbDrone.Core.Test.Qualities;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Music;
-using NzbDrone.Core.Languages;
-using NzbDrone.Core.Profiles.Languages;
 
 namespace NzbDrone.Core.Test.HistoryTests
 {
@@ -23,7 +21,6 @@ namespace NzbDrone.Core.Test.HistoryTests
     {
         private QualityProfile _profile;
         private QualityProfile _profileCustom;
-        private LanguageProfile _languageProfile;
 
         [SetUp]
         public void Setup()
@@ -41,16 +38,6 @@ namespace NzbDrone.Core.Test.HistoryTests
                 Items = QualityFixture.GetDefaultQualities(Quality.MP3_256),
 
             };
-
-
-            _languageProfile = new LanguageProfile
-
-            {
-                Cutoff = Language.Spanish,
-                Languages = Languages.LanguageFixture.GetDefaultLanguages()
-            };
-
-
         }
 
         [Test]
@@ -61,12 +48,12 @@ namespace NzbDrone.Core.Test.HistoryTests
             var trackFile = Builder<TrackFile>.CreateNew()
                 .With(f => f.SceneName = null)
                 .With(f => f.Artist = artist)
-                .With(f => f.Album = new Album())
                 .Build();
 
             var localTrack = new LocalTrack
             {
                 Artist = artist,
+                Album = new Album(),
                 Tracks = tracks,
                 Path = @"C:\Test\Unsorted\Artist.01.Hymn.mp3"
             };

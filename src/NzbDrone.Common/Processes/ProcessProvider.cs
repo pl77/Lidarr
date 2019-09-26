@@ -108,11 +108,7 @@ namespace NzbDrone.Common.Processes
 
         public Process Start(string path, string args = null, StringDictionary environmentVariables = null, Action<string> onOutputDataReceived = null, Action<string> onErrorDataReceived = null)
         {
-            if (PlatformInfo.IsMono && path.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
-            {
-                args = GetMonoArgs(path, args);
-                path = "mono";
-            }
+            (path, args) = GetPathAndArgs(path, args);
 
             var logger = LogManager.GetLogger(new FileInfo(path).Name);
 
@@ -192,11 +188,7 @@ namespace NzbDrone.Common.Processes
 
         public Process SpawnNewProcess(string path, string args = null, StringDictionary environmentVariables = null, bool noWindow = false)
         {
-            if (PlatformInfo.IsMono && path.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
-            {
-                args = GetMonoArgs(path, args);
-                path = "mono";
-            }
+            (path, args) = GetPathAndArgs(path, args);
 
             _logger.Debug("Starting {0} {1}", path, args);
 
@@ -336,6 +328,8 @@ namespace NzbDrone.Common.Processes
 
             var monoProcesses = Process.GetProcessesByName("mono")
                                        .Union(Process.GetProcessesByName("mono-sgen"))
+                                       .Union(Process.GetProcessesByName("mono-sgen32"))
+                                       .Union(Process.GetProcessesByName("mono-sgen64"))
                                        .Where(process =>
                                               process.Modules.Cast<ProcessModule>()
                                                      .Any(module =>
@@ -361,9 +355,19 @@ namespace NzbDrone.Common.Processes
             return processes;
         }
 
-        private string GetMonoArgs(string path, string args)
+        private (string Path, string Args) GetPathAndArgs(string path, string args)
         {
-            return string.Format("--debug {0} {1}", path, args);
+            if (PlatformInfo.IsMono && path.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return ("mono", $"--debug {path} {args}");
+            }
+
+            if (OsInfo.IsWindows && path.EndsWith(".bat", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return ("cmd.exe", $"/c {path} {args}");
+            }
+
+            return (path, args);
         }
     }
 }

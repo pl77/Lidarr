@@ -178,9 +178,9 @@ namespace NzbDrone.Core.Configuration
 
         public bool AnalyticsEnabled => GetValueBoolean("AnalyticsEnabled", true, persist: false);
 
-        public string Branch => GetValue("Branch", "develop").ToLowerInvariant();
+        public string Branch => GetValue("Branch", "master").ToLowerInvariant();
 
-        public string LogLevel => GetValue("LogLevel", "Info");
+        public string LogLevel => GetValue("LogLevel", "info");
         public string ConsoleLogLevel => GetValue("ConsoleLogLevel", string.Empty, persist: false);
         public bool FilterSentryEvents => GetValueBoolean("FilterSentryEvents", true, persist: false);
 
@@ -376,11 +376,6 @@ namespace NzbDrone.Core.Configuration
         {
             EnsureDefaultConfigFile();
             DeleteOldValues();
-
-            if (!AnalyticsEnabled)
-            {
-                NzbDroneLogger.UnRegisterRemoteLoggers();
-            }
         }
 
         public void Execute(ResetApiKeyCommand message)

@@ -50,6 +50,7 @@ namespace NzbDrone.Core.Test.MediaFiles.TrackImport.Identification
 
             _artistService = Mocker.Resolve<ArtistService>();
             Mocker.SetConstant<IArtistService>(_artistService);
+            Mocker.SetConstant<IArtistMetadataService>(Mocker.Resolve<ArtistMetadataService>());
             Mocker.SetConstant<IAlbumService>(Mocker.Resolve<AlbumService>());
             Mocker.SetConstant<IReleaseService>(Mocker.Resolve<ReleaseService>());
             Mocker.SetConstant<ITrackService>(Mocker.Resolve<TrackService>());
@@ -61,7 +62,8 @@ namespace NzbDrone.Core.Test.MediaFiles.TrackImport.Identification
             _addArtistService = Mocker.Resolve<AddArtistService>();
 
             Mocker.SetConstant<IRefreshTrackService>(Mocker.Resolve<RefreshTrackService>());
-            Mocker.SetConstant<IAddAlbumService>(Mocker.Resolve<AddAlbumService>());
+            Mocker.SetConstant<IRefreshAlbumReleaseService>(Mocker.Resolve<RefreshAlbumReleaseService>());
+            Mocker.SetConstant<IRefreshAlbumService>(Mocker.Resolve<RefreshAlbumService>());
             _refreshArtistService = Mocker.Resolve<RefreshArtistService>();
 
             Mocker.GetMock<IAddArtistValidator>().Setup(x => x.Validate(It.IsAny<Artist>())).Returns(new ValidationResult());
@@ -181,7 +183,7 @@ namespace NzbDrone.Core.Test.MediaFiles.TrackImport.Identification
             TestLogger.Debug($"Found releases:\n{result.Where(x => x.AlbumRelease != null).Select(x => x.AlbumRelease?.ForeignReleaseId).ToJson()}");
 
             result.Should().HaveCount(testcase.ExpectedMusicBrainzReleaseIds.Count);
-            result.Where(x => x.AlbumRelease != null).Select(x => x.AlbumRelease.ForeignReleaseId).ShouldBeEquivalentTo(testcase.ExpectedMusicBrainzReleaseIds);
+            result.Where(x => x.AlbumRelease != null).Select(x => x.AlbumRelease.ForeignReleaseId).Should().BeEquivalentTo(testcase.ExpectedMusicBrainzReleaseIds);
         }
     }
 }

@@ -100,10 +100,11 @@ namespace NzbDrone.Common.Test.CacheTests
                 Thread.Sleep(100);
             }
 
-            hitCount.Should().BeInRange(3, 6);
+            hitCount.Should().BeInRange(3, 7);
         }
 
         [Test]
+        [Retry(3)]
         public void should_clear_expired_when_they_expire()
         {
             int hitCount = 0;
@@ -122,7 +123,7 @@ namespace NzbDrone.Common.Test.CacheTests
 
             Thread.Sleep(1000);
 
-            hitCount.Should().BeInRange(3, 6);
+            hitCount.Should().BeInRange(3, 7);
             _cachedString.Values.Should().HaveCount(0);
         }
     }

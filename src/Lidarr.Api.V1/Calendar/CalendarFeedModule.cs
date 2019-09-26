@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Ical.Net;
 using Ical.Net.DataTypes;
-using Ical.Net.General;
-using Ical.Net.Interfaces.Serialization;
 using Ical.Net.Serialization;
-using Ical.Net.Serialization.iCalendar.Factory;
 using Nancy;
 using Nancy.Responses;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Tags;
 using NzbDrone.Core.Music;
 using Lidarr.Http.Extensions;
+using Ical.Net.CalendarComponents;
 
 namespace Lidarr.Api.V1.Calendar
 {
@@ -29,10 +27,10 @@ namespace Lidarr.Api.V1.Calendar
             _artistService = artistService;
             _tagService = tagService;
 
-            Get["/Lidarr.ics"] = options => GetCalendarFeed();
+            Get("/Lidarr.ics",  options => GetCalendarFeed());
         }
 
-        private Response GetCalendarFeed()
+        private object GetCalendarFeed()
         {
             var pastDays = 7;
             var futureDays = 28;            
@@ -82,11 +80,11 @@ namespace Lidarr.Api.V1.Calendar
                     continue;
                 }
 
-                var occurrence = calendar.Create<Event>();
-                occurrence.Uid = "NzbDrone_album_" + album.Id;
+                var occurrence = calendar.Create<CalendarEvent>();
+                occurrence.Uid = "Lidarr_album_" + album.Id;
                 //occurrence.Status = album.HasFile ? EventStatus.Confirmed : EventStatus.Tentative;
-                //occurrence.Description = album.Overview;
-                //occurrence.Categories = new List<string>() { album.Series.Network };
+                occurrence.Description = album.Overview;
+                occurrence.Categories = album.Genres;
 
                 occurrence.Start = new CalDateTime(album.ReleaseDate.Value.ToLocalTime()) { HasTime = false };
 

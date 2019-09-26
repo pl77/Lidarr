@@ -12,6 +12,7 @@ import FormLabel from 'Components/Form/FormLabel';
 import FormInputGroup from 'Components/Form/FormInputGroup';
 import RootFoldersConnector from 'RootFolder/RootFoldersConnector';
 import NamingConnector from './Naming/NamingConnector';
+import AddRootFolderConnector from './RootFolder/AddRootFolderConnector';
 
 const rescanAfterRefreshOptions = [
   { key: 'always', value: 'Always' },
@@ -23,6 +24,12 @@ const allowFingerprintingOptions = [
   { key: 'allFiles', value: 'Always' },
   { key: 'newFiles', value: 'For new imports only' },
   { key: 'never', value: 'Never' }
+];
+
+const downloadPropersAndRepacksOptions = [
+  { key: 'preferAndUpgrade', value: 'Prefer and Upgrade' },
+  { key: 'doNotUpgrade', value: 'Do not Upgrade Automatically' },
+  { key: 'doNotPrefer', value: 'Do not Prefer' }
 ];
 
 const fileDateOptions = [
@@ -145,6 +152,23 @@ class MediaManagement extends Component {
                         isAdvanced={true}
                         size={sizes.MEDIUM}
                       >
+                        <FormLabel>Minimum Free Space</FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.NUMBER}
+                          unit='MB'
+                          name="minimumFreeSpaceWhenImporting"
+                          helpText="Prevent import if it would leave less than this amount of disk space available"
+                          onChange={onInputChange}
+                          {...settings.minimumFreeSpaceWhenImporting}
+                        />
+                      </FormGroup>
+
+                      <FormGroup
+                        advancedSettings={advancedSettings}
+                        isAdvanced={true}
+                        size={sizes.MEDIUM}
+                      >
                         <FormLabel>Use Hardlinks instead of Copy</FormLabel>
 
                         <FormInputGroup
@@ -180,7 +204,10 @@ class MediaManagement extends Component {
                             <FormInputGroup
                               type={inputTypes.TEXT}
                               name="extraFileExtensions"
-                              helpText="Comma separated list of extra files to import, ie sub,nfo (.nfo will be imported as .nfo-orig)"
+                              helpTexts={[
+                                'Comma separated list of extra files to import (.nfo will be imported as .nfo-orig)',
+                                'Examples: ".sub, .nfo" or "sub,nfo"'
+                              ]}
                               onChange={onInputChange}
                               {...settings.extraFileExtensions}
                             />
@@ -209,14 +236,23 @@ class MediaManagement extends Component {
                     isAdvanced={true}
                     size={sizes.MEDIUM}
                   >
-                    <FormLabel>Download Propers</FormLabel>
+                    <FormLabel>Propers and Repacks</FormLabel>
 
                     <FormInputGroup
-                      type={inputTypes.CHECK}
-                      name="autoDownloadPropers"
-                      helpText="Should Lidarr automatically upgrade to propers when available?"
+                      type={inputTypes.SELECT}
+                      name="downloadPropersAndRepacks"
+                      helpTexts={[
+                        'Whether or not to automatically upgrade to Propers/Repacks',
+                        'Use \'Do not Prefer\' to sort by preferred word score over propers/repacks'
+                      ]}
+                      helpTextWarning={
+                        settings.downloadPropersAndRepacks.value === 'doNotPrefer' ?
+                          'Use preferred words for automatic upgrades to propers/repacks' :
+                          undefined
+                      }
+                      values={downloadPropersAndRepacksOptions}
                       onChange={onInputChange}
-                      {...settings.autoDownloadPropers}
+                      {...settings.downloadPropersAndRepacks}
                     />
                   </FormGroup>
 
@@ -282,6 +318,23 @@ class MediaManagement extends Component {
                       helpText="Track files will go here when deleted instead of being permanently deleted"
                       onChange={onInputChange}
                       {...settings.recycleBin}
+                    />
+                  </FormGroup>
+
+                  <FormGroup
+                    advancedSettings={advancedSettings}
+                    isAdvanced={true}
+                  >
+                    <FormLabel>Recycling Bin Cleanup</FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.NUMBER}
+                      name="recycleBinCleanupDays"
+                      helpText="Set to 0 to disable automatic cleanup"
+                      helpTextWarning="Files in the recycle bin older than the selected number of days will be cleaned up automatically"
+                      min={0}
+                      onChange={onInputChange}
+                      {...settings.recycleBinCleanupDays}
                     />
                   </FormGroup>
                 </FieldSet>
@@ -377,6 +430,7 @@ class MediaManagement extends Component {
 
           <FieldSet legend="Root Folders">
             <RootFoldersConnector />
+            <AddRootFolderConnector />
           </FieldSet>
         </PageContentBodyConnector>
       </PageContent>

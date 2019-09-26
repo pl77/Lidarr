@@ -30,9 +30,9 @@ namespace Lidarr.Api.V1.History
             _failedDownloadService = failedDownloadService;
             GetResourcePaged = GetHistory;
 
-            Get["/since"] = x => GetHistorySince();
-            Get["/artist"] = x => GetArtistHistory();
-            Post["/failed"] = x => MarkAsFailed();
+            Get("/since",  x => GetHistorySince());
+            Get("/artist",  x => GetArtistHistory());
+            Post("/failed",  x => MarkAsFailed());
         }
 
         protected HistoryResource MapToResource(NzbDrone.Core.History.History model, bool includeArtist, bool includeAlbum, bool includeTrack)
@@ -56,7 +56,6 @@ namespace Lidarr.Api.V1.History
             if (model.Artist != null)
             {
                 resource.QualityCutoffNotMet = _upgradableSpecification.QualityCutoffNotMet(model.Artist.QualityProfile.Value, model.Quality);
-                resource.LanguageCutoffNotMet = _upgradableSpecification.LanguageCutoffNotMet(model.Artist.LanguageProfile, model.Language);
             }
 
             return resource;
@@ -71,6 +70,7 @@ namespace Lidarr.Api.V1.History
 
             var eventTypeFilter = pagingResource.Filters.FirstOrDefault(f => f.Key == "eventType");
             var albumIdFilter = pagingResource.Filters.FirstOrDefault(f => f.Key == "albumId");
+            var downloadIdFilter = pagingResource.Filters.FirstOrDefault(f => f.Key == "downloadId");
 
             if (eventTypeFilter != null)
             {
@@ -82,6 +82,12 @@ namespace Lidarr.Api.V1.History
             {
                 var albumId = Convert.ToInt32(albumIdFilter.Value);
                 pagingSpec.FilterExpressions.Add(h => h.AlbumId == albumId);
+            }
+
+            if (downloadIdFilter != null)
+            {
+                var downloadId = downloadIdFilter.Value;
+                pagingSpec.FilterExpressions.Add(h => h.DownloadId == downloadId);
             }
 
 
@@ -144,11 +150,11 @@ namespace Lidarr.Api.V1.History
             return _historyService.GetByArtist(artistId, eventType).Select(h => MapToResource(h, includeArtist, includeAlbum, includeTrack)).ToList();
         }
 
-        private Response MarkAsFailed()
+        private object MarkAsFailed()
         {
             var id = (int)Request.Form.Id;
             _failedDownloadService.MarkAsFailed(id);
-            return new object().AsResponse();
+            return new object();
         }
     }
 }

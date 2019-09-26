@@ -5,10 +5,11 @@ using NLog;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Instrumentation;
 using NzbDrone.Core.Instrumentation;
-using NzbDrone.Core.Lifecycle;
-using NzbDrone.Core.Messaging.Events;
 using Lidarr.Http.Extensions.Pipelines;
 using TinyIoC;
+using Nancy;
+using System;
+using Nancy.Responses.Negotiation;
 
 namespace Lidarr.Http
 {
@@ -51,7 +52,22 @@ namespace Lidarr.Http
             return _tinyIoCContainer;
         }
 
-        protected override DiagnosticsConfiguration DiagnosticsConfiguration => new DiagnosticsConfiguration { Password = @"password" };
+        protected override Func<ITypeCatalog, NancyInternalConfiguration> InternalConfiguration
+        {
+            get
+            {
+                // We don't support Xml Serialization atm
+                return NancyInternalConfiguration.WithOverrides(x => {
+                    x.ResponseProcessors.Remove(typeof(ViewProcessor));
+                    x.ResponseProcessors.Remove(typeof(XmlProcessor));
+                });
+            }
+        }
+
+        public override void Configure(Nancy.Configuration.INancyEnvironment environment)
+        {
+            environment.Diagnostics(password: @"password");
+        }
 
         protected override byte[] FavIcon => null;
     }

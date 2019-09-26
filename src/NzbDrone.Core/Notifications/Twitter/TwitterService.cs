@@ -1,13 +1,13 @@
 ﻿using FluentValidation.Results;
 using NLog;
 using System;
-using OAuth;
 using System.Net;
 using System.Collections.Specialized;
 using System.IO;
 using System.Web;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
+using NzbDrone.Common.OAuth;
 
 namespace NzbDrone.Core.Notifications.Twitter
 {
@@ -23,9 +23,6 @@ namespace NzbDrone.Core.Notifications.Twitter
     {
         private readonly IHttpClient _httpClient;
         private readonly Logger _logger;
-
-//        private static string _consumerKey = "5jSR8a3cp0ToOqSMLMv5GtMQD";
-//        private static string _consumerSecret = "dxoZjyMq4BLsC8KxyhSOrIndhCzJ0Dik2hrLzqyJcqoGk4Pfsp";
 
         public TwitterService(IHttpClient httpClient, Logger logger)
         {

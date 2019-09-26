@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Common.Http.Proxy;
+using NzbDrone.Core.Qualities;
+using NzbDrone.Core.Security;
 
 namespace NzbDrone.Core.Configuration
 {
@@ -24,11 +26,13 @@ namespace NzbDrone.Core.Configuration
         //Media Management
         bool AutoUnmonitorPreviouslyDownloadedTracks { get; set; }
         string RecycleBin { get; set; }
-        bool AutoDownloadPropers { get; set; }
+        int RecycleBinCleanupDays { get; set; }
+        ProperDownloadTypes DownloadPropersAndRepacks { get; set; }
         bool CreateEmptyArtistFolders { get; set; }
         bool DeleteEmptyFolders { get; set; }
         FileDateType FileDate { get; set; }
         bool SkipFreeSpaceCheckWhenImporting { get; set; }
+        int MinimumFreeSpaceWhenImporting { get; set; }
         bool CopyUsingHardlinks { get; set; }
         bool ImportExtraFiles { get; set; }
         string ExtraFileExtensions { get; set; }
@@ -95,5 +99,6 @@ namespace NzbDrone.Core.Configuration
         int BackupInterval { get; }
         int BackupRetention { get; }
 
+        CertificateValidationType CertificateValidation { get; }
     }
 }

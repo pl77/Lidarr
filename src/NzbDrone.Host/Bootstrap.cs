@@ -8,7 +8,6 @@ using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Exceptions;
 using NzbDrone.Common.Instrumentation;
 using NzbDrone.Common.Processes;
-using NzbDrone.Common.Security;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Instrumentation;
 
@@ -23,9 +22,6 @@ namespace NzbDrone.Host
         {
             try
             {
-                SecurityProtocolPolicy.Register();
-                X509CertificateValidationPolicy.Register();
-
                 Logger.Info("Starting Lidarr - {0} - Version {1}", Assembly.GetCallingAssembly().Location, Assembly.GetExecutingAssembly().GetName().Version);
 
                 if (!PlatformValidation.IsValidate(userAlert))
@@ -36,6 +32,7 @@ namespace NzbDrone.Host
                 LongPathSupport.Enable();
 
                 _container = MainAppContainerBuilder.BuildContainer(startupContext);
+                _container.Resolve<InitializeLogger>().Initialize();
                 _container.Resolve<IAppFolderFactory>().Register();
                 _container.Resolve<IProvidePidFile>().Write();
 

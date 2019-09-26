@@ -12,6 +12,7 @@ using System.Linq;
 using NzbDrone.Common.Extensions;
 using System.Collections.Generic;
 using NzbDrone.Test.Common;
+using NzbDrone.Common.Disk;
 
 namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
 {
@@ -22,7 +23,7 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
         {
             private static readonly string[] MediaFiles = new [] { "nin.mp2", "nin.mp3", "nin.flac", "nin.m4a", "nin.wma", "nin.ape", "nin.opus" };
 
-            private static readonly string[] SkipProperties = new [] { "IsValid", "Duration", "Quality", "MediaInfo" };
+            private static readonly string[] SkipProperties = new [] { "IsValid", "Duration", "Quality", "MediaInfo", "ImageFile" };
             private static readonly Dictionary<string, string[]> SkipPropertiesByFile = new Dictionary<string, string[]> {
                 { "nin.mp2", new [] {"OriginalReleaseDate"} }
             };
@@ -47,13 +48,21 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
         private readonly string testdir = Path.Combine(TestContext.CurrentContext.TestDirectory, "Files", "Media");
         private string copiedFile;
         private AudioTag testTags;
+        private IDiskProvider _diskProvider;
         
         [SetUp]
         public void Setup()
         {
+            _diskProvider = Mocker.Resolve<IDiskProvider>("ActualDiskProvider");
+
+            Mocker.SetConstant<IDiskProvider>(_diskProvider);
+            
             Mocker.GetMock<IConfigService>()
                 .Setup(x => x.WriteAudioTags)
                 .Returns(WriteAudioTagsType.Sync);
+
+            var imageFile = Path.Combine(testdir, "nin.png");
+            var imageSize = _diskProvider.GetFileSize(imageFile);
 
             // have to manually set the arrays of string parameters and integers to values > 1
             testTags = Builder<AudioTag>.CreateNew()
@@ -67,6 +76,9 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
                 .With(x => x.OriginalYear = 2009)
                 .With(x => x.Performers = new [] { "Performer1" })
                 .With(x => x.AlbumArtists = new [] { "방탄소년단" })
+                .With(x => x.Genres = new [] { "Genre1", "Genre2" })
+                .With(x => x.ImageFile = imageFile)
+                .With(x => x.ImageSize = imageSize)
                 .Build();
         }
 
@@ -222,7 +234,8 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
             var tag = Subject.ReadAudioTag(path);
             var expected = new AudioTag() {
                 Performers = new string[0],
-                AlbumArtists = new string[0]
+                AlbumArtists = new string[0],
+                Genres = new string[0]
             };
 
             VerifySame(tag, expected, skipProperties);
@@ -312,7 +325,7 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
             tag.OriginalReleaseDate.HasValue.Should().BeFalse();
         }
 
-        private TrackFile GivenPopulatedTrackfile()
+        private TrackFile GivenPopulatedTrackfile(int mediumOffset)
         {
             var meta = Builder<ArtistMetadata>.CreateNew().Build();
             var artist = Builder<Artist>.CreateNew()
@@ -324,6 +337,8 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
                 .Build();
 
             var media = Builder<Medium>.CreateListOfSize(2).Build() as List<Medium>;
+            media.ForEach(x => x.Number += mediumOffset);
+
             var release = Builder<AlbumRelease>.CreateNew()
                 .With(x => x.Album = album)
                 .With(x => x.Media = media)
@@ -336,14 +351,15 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
                 .With(x => x.AlbumRelease = release)
                 .With(x => x.ArtistMetadata = meta)
                 .TheFirst(5)
-                .With(x => x.MediumNumber = 1)
+                .With(x => x.MediumNumber = 1 + mediumOffset)
                 .TheNext(5)
-                .With(x => x.MediumNumber = 2)
+                .With(x => x.MediumNumber = 2 + mediumOffset)
                 .Build() as List<Track>;
             release.Tracks = tracks;
 
             var file = Builder<TrackFile>.CreateNew()
                 .With(x => x.Tracks = new List<Track> { tracks[0] })
+                .With(x => x.Artist = artist)
                 .Build();
 
             return file;
@@ -352,10 +368,41 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
         [Test]
         public void get_metadata_should_not_fail_with_missing_country()
         {
-            var file = GivenPopulatedTrackfile();
+            var file = GivenPopulatedTrackfile(0);
             var tag = Subject.GetTrackMetadata(file);
         
             tag.MusicBrainzReleaseCountry.Should().BeNull();
+        }
+
+        [Test]
+        public void should_not_fail_if_media_has_been_omitted()
+        {
+            // make sure that we aren't relying on index of items in
+            // Media being the same as the medium number
+
+            var file = GivenPopulatedTrackfile(100);
+            var tag = Subject.GetTrackMetadata(file);
+
+            tag.Media.Should().NotBeNull();
+        }
+
+        [TestCase("nin.mp3")]
+        public void write_tags_should_update_trackfile_size_and_modified(string filename)
+        {
+            Mocker.GetMock<IConfigService>()
+                .Setup(x => x.ScrubAudioTags)
+                .Returns(true);
+
+            GivenFileCopy(filename);
+
+            var file = GivenPopulatedTrackfile(0);
+
+            file.Path = copiedFile;
+            Subject.WriteTags(file, false, true);
+
+            var fileInfo = _diskProvider.GetFileInfo(file.Path);
+            file.Modified.Should().Be(fileInfo.LastWriteTimeUtc);
+            file.Size.Should().Be(fileInfo.Length);
         }
     }
 }

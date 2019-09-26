@@ -1,29 +1,32 @@
 using NzbDrone.Common.Extensions;
-using NzbDrone.Core.Datastore;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Marr.Data;
+using Equ;
+using System.Linq;
 
 namespace NzbDrone.Core.Music
 {
-    public class Album : ModelBase
+    public class Album : Entity<Album>
     {
         public Album()
         {
-            Genres = new List<string>();
+            OldForeignAlbumIds = new List<string>();
+
             Images = new List<MediaCover.MediaCover>();
             Links = new List<Links>();
+            Genres = new List<string>();
+            SecondaryTypes = new List<SecondaryAlbumType>();
             Ratings = new Ratings();
             Artist = new Artist();
-        }
 
-        public const string RELEASE_DATE_FORMAT = "yyyy-MM-dd";
+        }
 
         // These correspond to columns in the Albums table
         // These are metadata entries
         public int ArtistMetadataId { get; set; }
         public string ForeignAlbumId { get; set; }
+        public List<string> OldForeignAlbumIds { get; set; }
         public string Title { get; set; }
         public string Overview { get; set; }
         public string Disambiguation { get; set; }
@@ -42,14 +45,19 @@ namespace NzbDrone.Core.Music
         public bool AnyReleaseOk { get; set; }
         public DateTime? LastInfoSync { get; set; }
         public DateTime Added { get; set; }
+        [MemberwiseEqualityIgnore]
         public AddArtistOptions AddOptions { get; set; }
 
         // These are dynamically queried from other tables
+        [MemberwiseEqualityIgnore]
         public LazyLoaded<ArtistMetadata> ArtistMetadata { get; set; }
+        [MemberwiseEqualityIgnore]
         public LazyLoaded<List<AlbumRelease>> AlbumReleases { get; set; }
+        [MemberwiseEqualityIgnore]
         public LazyLoaded<Artist> Artist { get; set; }
 
         //compatibility properties with old version of Album
+        [MemberwiseEqualityIgnore]
         public int ArtistId { get { return Artist?.Value?.Id ?? 0; } set { Artist.Value.Id = value; } }
 
         public override string ToString()
@@ -57,7 +65,36 @@ namespace NzbDrone.Core.Music
             return string.Format("[{0}][{1}]", ForeignAlbumId, Title.NullSafe());
         }
 
-        public void ApplyChanges(Album otherAlbum)
+        public override void UseMetadataFrom(Album other)
+        {
+            ForeignAlbumId = other.ForeignAlbumId;
+            OldForeignAlbumIds = other.OldForeignAlbumIds;
+            Title = other.Title;
+            Overview = other.Overview.IsNullOrWhiteSpace() ? Overview : other.Overview;
+            Disambiguation = other.Disambiguation;
+            ReleaseDate = other.ReleaseDate;
+            Images = other.Images.Any() ? other.Images : Images;
+            Links = other.Links;
+            Genres = other.Genres;
+            AlbumType = other.AlbumType;
+            SecondaryTypes = other.SecondaryTypes;
+            Ratings = other.Ratings;
+            CleanTitle = other.CleanTitle;
+        }
+
+        public override void UseDbFieldsFrom(Album other)
+        {
+            Id = other.Id;
+            ArtistMetadataId = other.ArtistMetadataId;
+            ProfileId = other.ProfileId;
+            Monitored = other.Monitored;
+            AnyReleaseOk = other.AnyReleaseOk;
+            LastInfoSync = other.LastInfoSync;
+            Added = other.Added;
+            AddOptions = other.AddOptions;
+        }
+
+        public override void ApplyChanges(Album otherAlbum)
         {
             ForeignAlbumId = otherAlbum.ForeignAlbumId;
             ProfileId = otherAlbum.ProfileId;

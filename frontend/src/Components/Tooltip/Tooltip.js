@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { Manager, Popper, Reference } from 'react-popper';
 import classNames from 'classnames';
-import isMobileUtil from 'Utilities/isMobile';
+import { isMobile as isMobileUtil } from 'Utilities/mobile';
 import { kinds, tooltipPositions } from 'Helpers/Props';
 import Portal from 'Components/Portal';
 import styles from './Tooltip.css';
@@ -33,6 +33,33 @@ class Tooltip extends Component {
     if (this._closeTimeout) {
       this._closeTimeout = clearTimeout(this._closeTimeout);
     }
+  }
+
+  //
+  // Control
+
+  computeMaxSize = (data) => {
+    const {
+      top,
+      right,
+      bottom,
+      left
+    } = data.offsets.reference;
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    if ((/^top/).test(data.placement)) {
+      data.styles.maxHeight = top - 20;
+    } else if ((/^bottom/).test(data.placement)) {
+      data.styles.maxHeight = windowHeight - bottom - 20;
+    } else if ((/^right/).test(data.placement)) {
+      data.styles.maxWidth = windowWidth - right - 30;
+    } else {
+      data.styles.maxWidth = left - 30;
+    }
+
+    return data;
   }
 
   //
@@ -72,7 +99,8 @@ class Tooltip extends Component {
       anchor,
       tooltip,
       kind,
-      position
+      position,
+      canFlip
     } = this.props;
 
     return (
@@ -98,10 +126,18 @@ class Tooltip extends Component {
             // are shown (Quality Definitions for example).
             eventsEnabled={false}
             modifiers={{
+              computeMaxHeight: {
+                order: 851,
+                enabled: true,
+                fn: this.computeMaxSize
+              },
               preventOverflow: {
               // Fixes positioning for tooltips in the queue
               // and likely others.
                 escapeWithReference: true
+              },
+              flip: {
+                enabled: canFlip
               }
             }}
           >
@@ -132,7 +168,9 @@ class Tooltip extends Component {
                           )}
                         />
 
-                        <div className={bodyClassName}>
+                        <div
+                          className={bodyClassName}
+                        >
                           {tooltip}
                         </div>
                       </div> :
@@ -154,13 +192,15 @@ Tooltip.propTypes = {
   anchor: PropTypes.node.isRequired,
   tooltip: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
   kind: PropTypes.oneOf([kinds.DEFAULT, kinds.INVERSE]),
-  position: PropTypes.oneOf(tooltipPositions.all)
+  position: PropTypes.oneOf(tooltipPositions.all),
+  canFlip: PropTypes.bool.isRequired
 };
 
 Tooltip.defaultProps = {
   bodyClassName: styles.body,
   kind: kinds.DEFAULT,
-  position: tooltipPositions.TOP
+  position: tooltipPositions.TOP,
+  canFlip: true
 };
 
 export default Tooltip;

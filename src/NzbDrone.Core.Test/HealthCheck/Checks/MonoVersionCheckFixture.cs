@@ -18,17 +18,30 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
                   .Returns(new Version(version));
         }
 
-        [TestCase("4.6")]
-        [TestCase("4.4.2")]
-        [TestCase("4.8")]
-        [TestCase("5.0")]
-        [TestCase("5.2")]
-        [TestCase("5.4")]
+        [TestCase("5.18")]
+        [TestCase("5.20")]
         public void should_return_ok(string version)
         {
             GivenOutput(version);
 
             Subject.Check().ShouldBeOk();
+        }
+
+        [TestCase("5.16")]
+        public void should_return_notice(string version)
+        {
+            GivenOutput(version);
+
+            Subject.Check().ShouldBeNotice();
+        }
+
+        [TestCase("5.4")]
+        [TestCase("5.8")]
+        public void should_return_warning(string version)
+        {
+            GivenOutput(version);
+
+            Subject.Check().ShouldBeWarning();
         }
 
         [TestCase("2.10.2")]
@@ -42,14 +55,6 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
         [TestCase("3.10")]
         [TestCase("4.0.0.0")]
         [TestCase("4.2")]
-        public void should_return_warning(string version)
-        {
-            GivenOutput(version);
-
-            Subject.Check().ShouldBeWarning();
-        }
-
-
         [TestCase("4.4.0")]
         [TestCase("4.4.1")]
         public void should_return_error(string version)

@@ -39,10 +39,10 @@ function ArtistStatusCell(props) {
 
 ArtistStatusCell.propTypes = {
   className: PropTypes.string.isRequired,
-  artistType: PropTypes.string.isRequired,
+  artistType: PropTypes.string,
   monitored: PropTypes.bool.isRequired,
   status: PropTypes.string.isRequired,
-  component: PropTypes.func
+  component: PropTypes.elementType
 };
 
 ArtistStatusCell.defaultProps = {

@@ -39,6 +39,7 @@ namespace NzbDrone.Common.Disk
         public abstract long? GetAvailableSpace(string path);
         public abstract void InheritFolderPermissions(string filename);
         public abstract void SetPermissions(string path, string mask, string user, string group);
+        public abstract void CopyPermissions(string sourcePath, string targetPath, bool includeOwner);
         public abstract long? GetTotalSize(string path);
 
         public DateTime FolderGetCreationTime(string path)
@@ -152,6 +153,13 @@ namespace NzbDrone.Common.Disk
             Ensure.That(path, () => path).IsValidPath();
 
             return _fileSystem.Directory.GetDirectories(path);
+        }
+
+        public string[] GetDirectories(string path, SearchOption searchOption)
+        {
+            Ensure.That(path, () => path).IsValidPath();
+
+            return _fileSystem.Directory.GetDirectories(path, "*", searchOption);
         }
 
         public string[] GetFiles(string path, SearchOption searchOption)
@@ -500,10 +508,11 @@ namespace NzbDrone.Common.Disk
 
         public void RemoveEmptySubfolders(string path)
         {
-            var subfolders = GetDirectories(path);
+            var subfolders = GetDirectories(path, SearchOption.AllDirectories);
             var files = GetFiles(path, SearchOption.AllDirectories);
 
-            foreach (var subfolder in subfolders)
+            // By sorting by length descending we ensure we always delete children before parents
+            foreach (var subfolder in subfolders.OrderByDescending(x => x.Length))
             {
                 if (files.None(f => subfolder.IsParentPath(f)))
                 {

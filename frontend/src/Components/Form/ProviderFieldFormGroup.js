@@ -14,13 +14,15 @@ function getType(type) {
       return inputTypes.CHECK;
     case 'device':
       return inputTypes.DEVICE;
+    case 'playlist':
+      return inputTypes.PLAYLIST;
     case 'password':
       return inputTypes.PASSWORD;
     case 'number':
       return inputTypes.NUMBER;
     case 'path':
       return inputTypes.PATH;
-    case 'filepath':
+    case 'filePath':
       return inputTypes.PATH;
     case 'select':
       return inputTypes.SELECT;
@@ -28,7 +30,7 @@ function getType(type) {
       return inputTypes.TEXT_TAG;
     case 'textbox':
       return inputTypes.TEXT;
-    case 'oauth':
+    case 'oAuth':
       return inputTypes.OAUTH;
     default:
       return inputTypes.TEXT;
@@ -60,6 +62,7 @@ function ProviderFieldFormGroup(props) {
     value,
     type,
     advanced,
+    hidden,
     pending,
     errors,
     warnings,
@@ -67,6 +70,13 @@ function ProviderFieldFormGroup(props) {
     onChange,
     ...otherProps
   } = props;
+
+  if (
+    hidden === 'hidden' ||
+    (hidden === 'hiddenIfNotSet' && !value)
+  ) {
+    return null;
+  }
 
   return (
     <FormGroup
@@ -86,7 +96,7 @@ function ProviderFieldFormGroup(props) {
         errors={errors}
         warnings={warnings}
         pending={pending}
-        includeFiles={type === 'filepath' ? true : undefined}
+        includeFiles={type === 'filePath' ? true : undefined}
         onChange={onChange}
         {...otherProps}
       />
@@ -108,6 +118,7 @@ ProviderFieldFormGroup.propTypes = {
   value: PropTypes.any,
   type: PropTypes.string.isRequired,
   advanced: PropTypes.bool.isRequired,
+  hidden: PropTypes.string,
   pending: PropTypes.bool.isRequired,
   errors: PropTypes.arrayOf(PropTypes.object).isRequired,
   warnings: PropTypes.arrayOf(PropTypes.object).isRequired,

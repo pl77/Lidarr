@@ -137,8 +137,7 @@ namespace NzbDrone.Core.MediaFiles
                         Modified = decision.Item.Modified,
                         DateAdded = DateTime.UtcNow,
                         Quality = decision.Item.Quality,
-                        MediaInfo = decision.Item.FileTrackInfo.MediaInfo,
-                        Language = decision.Item.Language
+                        MediaInfo = decision.Item.FileTrackInfo.MediaInfo
                     })
                 .ToList();
             _mediaFileService.AddMany(newFiles);
@@ -276,7 +275,7 @@ namespace NzbDrone.Core.MediaFiles
             if (message.ArtistId.HasValue)
             {
                 var artist = _artistService.GetArtist(message.ArtistId.Value);
-                Scan(artist);
+                Scan(artist, message.Filter);
             }
 
             else
@@ -285,7 +284,7 @@ namespace NzbDrone.Core.MediaFiles
 
                 foreach (var artist in allArtists)
                 {
-                    Scan(artist);
+                    Scan(artist, message.Filter);
                 }
             }
         }
